@@ -91,7 +91,6 @@
   </div>
 </div>
 
-<!-- ====== МОДАЛЬНОЕ ОКНО АВТОРИЗАЦИИ ====== -->
 <div id="authModal" class="modal hidden">
   <div class="modal-content">
     <div class="modal-header">
@@ -108,7 +107,7 @@
         <input id="modalPassword" type="password" placeholder="Пароль">
       </div>
       
-      <!-- ПОЛЕ ДЛЯ КОДА (ОБЯЗАТЕЛЬНО ДОЛЖНО БЫТЬ) -->
+      <!-- ПОЛЕ ДЛЯ КОДА -->
       <div class="input-group" id="verificationGroup" style="display: none;">
         <span class="input-icon">🔑</span>
         <input id="verificationCode" placeholder="Код из письма" type="text" maxlength="4">
@@ -120,6 +119,8 @@
         <button class="btn-primary" onclick="registerFromModal()">Регистрация</button>
         <button class="btn-secondary" onclick="loginFromModal()">Войти</button>
       </div>
+      
+      <button class="btn-link" onclick="forgotPassword()" style="background:none; border:none; color:var(--cyan); margin-top: 15px; width: 100%; cursor: pointer;">🔐 Забыли пароль?</button>
     </div>
   </div>
 </div>

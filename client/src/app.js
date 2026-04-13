@@ -26,10 +26,10 @@ let currentTheme = "home";
 
 async function loadData() {
   try {
-    const productsRes = await fetch('data/products.json');
+    const productsRes = await fetch('assets/data/products.json');
     const fullDatabase = await productsRes.json();
     
-    const recipesRes = await fetch('data/recipes.json');
+    const recipesRes = await fetch('assets/data/recipes.json');
     const loadedRecipes = await recipesRes.json();
     
     const usedIngredients = new Set();
@@ -173,28 +173,28 @@ function changeBackground(theme) {
     return;
   }
   
-  // Прямые пути к картинкам
+  // ПРАВИЛЬНЫЕ ПУТИ (относительно папки public)
   let imagePath = '';
   
   switch(theme) {
     case 'calculator':
-      imagePath = '/client/public/assets/images/calculator.png';
+      imagePath = '/assets/images/calculator.png';
       break;
     case 'meals':
-      imagePath = '/client/public/assets/images/bju.png';
+      imagePath = '/assets/images/bju.png';
       break;
     case 'report':
-      imagePath = '/client/public/assets/images/report.png';
+      imagePath = '/assets/images/report.png';
       break;
     case 'chat':
-      imagePath = '/client/public/assets/images/chat.png';
+      imagePath = '/assets/images/chat.png';
       break;
     case 'recipes':
-      imagePath = '/client/public/assets/images/recipes.png';
+      imagePath = '/assets/images/recipes.png';
       break;
     case 'home':
     default:
-      imagePath = '/client/public/assets/images/home.png';
+      imagePath = '/assets/images/home.png';
       break;
   }
   
@@ -216,7 +216,6 @@ function changeBackground(theme) {
     overlay.style.background = gradient;
   }
 }
-
 
 function renderSidebarImages() {
   const container = document.getElementById("sidebarImages");
@@ -1566,31 +1565,6 @@ function showAllExercises() {
 // 13. МОДАЛЬНОЕ ОКНО АВТОРИЗАЦИИ
 // ============================================================
 
-function showAuthModal() { document.getElementById('authModal').classList.remove('hidden'); }
-function closeAuthModal() { document.getElementById('authModal').classList.add('hidden'); }
-async function registerFromModal() {
-  const email = document.getElementById("modalEmail"), password = document.getElementById("modalPassword");
-  const res = await fetch("http://localhost:3001/register", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ email:email.value, password:password.value }) });
-  const data = await res.json();
-  if (data.error) alert(data.error); else alert("Регистрация успешна! Теперь войдите.");
-}
-async function loginFromModal() {
-  const email = document.getElementById("modalEmail"), password = document.getElementById("modalPassword");
-  const res = await fetch("http://localhost:3001/login", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ email:email.value, password:password.value }) });
-  const data = await res.json();
-  if (data.error) { alert(data.error); return; }
-  token = data.token; userId = data.userId;
-  localStorage.setItem("token", token); localStorage.setItem("userId", userId);
-  closeAuthModal(); showApp(); loadUserNorm(); loadTodayMeals(); renderProductsGrid();
-}
-window.showApp = function() {
-  document.getElementById("mainPage").classList.add("hidden");
-  document.getElementById("appPage").classList.remove("hidden");
-  if (typeof loadUserNorm === 'function') loadUserNorm();
-  if (typeof loadTodayMeals === 'function') loadTodayMeals();
-  if (typeof renderProductsGrid === 'function') renderProductsGrid();
-};
-
 // ============================================================
 // 14. ИНИЦИАЛИЗАЦИЯ И СОБЫТИЯ
 // ============================================================
@@ -1788,52 +1762,8 @@ document.addEventListener("DOMContentLoaded", () => {
   if (dateInput) dateInput.addEventListener("change", () => { loadTodayMeals(); });
 });
 
-async function sendVerificationCode() {
-  const email = document.getElementById("modalEmail").value;
-  if (!email) {
-    alert("Введите email сначала");
-    return;
-  }
-  
-  const res = await fetch("http://localhost:3001/send-verification", {
-    method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({ email })
-  });
-  
-  const data = await res.json();
-  if (data.error) alert(data.error);
-  else {
-    alert("Код отправлен на почту!");
-    document.getElementById("verificationGroup").style.display = "flex";
-  }
-}
+ 
 
-async function registerFromModal() {
-  const email = document.getElementById("modalEmail").value;
-  const password = document.getElementById("modalPassword").value;
-  const code = document.getElementById("verificationCode").value;
-  
-  if (!code) {
-    alert("Введите код из письма");
-    return;
-  }
-  
-  const res = await fetch("http://localhost:3001/register", {
-    method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({ email, password, verificationCode: code })
-  });
-  
-  const data = await res.json();
-  if (data.error) alert(data.error);
-  else {
-    alert("Регистрация успешна!");
-    localStorage.setItem("token", data.token);
-    localStorage.setItem("userId", data.userId);
-    location.reload();
-  }
-}
 
 
 // ============================================================
@@ -1847,18 +1777,32 @@ async function sendVerificationCode() {
     return;
   }
   
-  const res = await fetch("http://localhost:3001/send-verification", {
-    method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({ email })
-  });
-  
-  const data = await res.json();
-  if (data.error) {
-    alert(data.error);
+  // ПОКАЗЫВАЕМ ПОЛЕ МГНОВЕННО (ДО ОТПРАВКИ ЗАПРОСА)
+  const group = document.getElementById("verificationGroup");
+  if (group) {
+    group.style.display = "block";
+    group.style.marginBottom = "14px";
+    console.log("✅ Поле для кода показано");
   } else {
-    alert("Код отправлен! Проверьте почту или терминал сервера.");
-    document.getElementById("verificationGroup").style.display = "flex";
+    console.error("❌ verificationGroup не найдена!");
+  }
+  
+  // Отправляем запрос фоном
+  try {
+    const res = await fetch("http://localhost:3001/send-verification", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({ email })
+    });
+    const data = await res.json();
+    if (data.error) {
+      alert(data.error);
+    } else {
+      console.log("✅ Код отправлен в терминал сервера");
+    }
+  } catch(e) {
+    console.error("❌ Ошибка:", e);
+    alert("Ошибка подключения к серверу. Запущен ли сервер?");
   }
 }
 
@@ -1871,61 +1815,79 @@ async function registerFromModal() {
     alert("Введите email");
     return;
   }
-  
   if (!password) {
     alert("Введите пароль");
     return;
   }
-  
   if (!code) {
-    alert("Введите код из письма. Если кода нет, нажмите 'Отправить код'");
+    alert("Введите код из письма. Нажмите 'Отправить код' сначала");
     return;
   }
   
-  const res = await fetch("http://localhost:3001/register", {
-    method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({ email, password, verificationCode: code })
-  });
+  try {
+    const res = await fetch("http://localhost:3001/register", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({ email, password, verificationCode: code })
+    });
+    
+    const data = await res.json();
+    if (data.error) {
+      alert(data.error);
+    } else {
+      alert("✅ Регистрация успешна!");
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("userId", data.userId);
+      closeAuthModal();
+      showApp();
+      loadUserNorm();
+      loadTodayMeals();
+      renderProductsGrid();
+    }
+  } catch(e) {
+    alert("Ошибка подключения к серверу");
+  }
+}
+
+async function loginFromModal() {
+  const email = document.getElementById("modalEmail").value;
+  const password = document.getElementById("modalPassword").value;
   
-  const data = await res.json();
-  if (data.error) {
-    alert(data.error);
-  } else {
-    alert("Регистрация успешна!");
-    localStorage.setItem("token", data.token);
-    localStorage.setItem("userId", data.userId);
+  try {
+    const res = await fetch("http://localhost:3001/login", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({ email, password })
+    });
+    
+    const data = await res.json();
+    if (data.error) {
+      alert(data.error);
+      return;
+    }
+    token = data.token;
+    userId = data.userId;
+    localStorage.setItem("token", token);
+    localStorage.setItem("userId", userId);
     closeAuthModal();
     showApp();
     loadUserNorm();
     loadTodayMeals();
     renderProductsGrid();
+  } catch(e) {
+    alert("Ошибка подключения к серверу");
+  }
+}
+function showAuthModal() {
+  const modal = document.getElementById('authModal');
+  if (modal) {
+    modal.classList.remove('hidden');
   }
 }
 
-// Переопределяем loginFromModal (оставляем как есть, без кода)
-async function loginFromModal() {
-  const email = document.getElementById("modalEmail").value;
-  const password = document.getElementById("modalPassword").value;
-  
-  const res = await fetch("http://localhost:3001/login", {
-    method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({ email, password })
-  });
-  
-  const data = await res.json();
-  if (data.error) {
-    alert(data.error);
-    return;
+function closeAuthModal() {
+  const modal = document.getElementById('authModal');
+  if (modal) {
+    modal.classList.add('hidden');
   }
-  token = data.token;
-  userId = data.userId;
-  localStorage.setItem("token", token);
-  localStorage.setItem("userId", userId);
-  closeAuthModal();
-  showApp();
-  loadUserNorm();
-  loadTodayMeals();
-  renderProductsGrid();
 }
