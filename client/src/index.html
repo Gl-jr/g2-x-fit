@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>G² x FIT - Твоя совесть в приложении</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<img class="bg-image" src="/assets/images/home.png" alt="background">
+<div class="bg-overlay"></div>
+
+
+
+<!-- ====== ГЛАВНАЯ СТРАНИЦА (БЕЗ РЕГИСТРАЦИИ) ====== -->
+<div id="mainPage" class="main-page">
+  <div class="header-main">
+    <div class="logo-main">
+      <span class="logo-fit">G²</span><span class="logo-blyadi">&nbsp;x FIT</span>
+    </div>
+    <button class="btn-cabinet" onclick="showAuthModal()">👤 Личный кабинет</button>
+  </div>
+
+  <div class="hero-section">
+    <h1 class="hero-title">G² x FIT</h1>
+    <p class="hero-subtitle">Начинаем коллаб 🤝</p>
+    <div class="hero-badges">
+      <span class="badge">🔥 GG. Посчитано</span>
+      <span class="badge">💪 G² x Fit - твоя совесть в приложении</span>
+      <span class="badge">⚡ G² x Fit - играем в твою пользу</span>
+      <span class="badge">⭐ Лучше, чем вчера - уже GG</span>
+      <span class="badge">🎯 Сделать GG - твой выбор</span>
+    </div>
+  </div>
+
+  <div class="main-grid">
+    <!-- Блок новостей -->
+    <div class="main-card">
+      <div class="card-header">
+        <div class="card-icon">📰</div>
+        <h2>Новости фитнеса</h2>
+      </div>
+      <div class="news-list" id="newsList">
+        <!-- Новости загружаются из API -->
+      </div>
+      <div class="news-source">
+        Источник: <a href="https://sport24.ru" target="_blank">Sport24</a> | 
+        <a href="https://www.menshealth.com" target="_blank">Men's Health</a>
+      </div>
+    </div>
+
+    <!-- Блок готовых рационов -->
+    <div class="main-card">
+      <div class="card-header">
+        <div class="card-icon">🍽️</div>
+        <h2>Готовые рационы на 30 дней</h2>
+      </div>
+      <div class="meal-plans" id="mealPlans">
+        <!-- Рационы загружаются -->
+      </div>
+      <button class="btn-more" onclick="showAllMealPlans()">Смотреть все рационы →</button>
+    </div>
+
+    <!-- Блок техники упражнений -->
+    <div class="main-card">
+      <div class="card-header">
+        <div class="card-icon">🏋️</div>
+        <h2>Правильная техника</h2>
+      </div>
+      <div class="exercises-list" id="exercisesList">
+        <!-- Упражнения загружаются -->
+      </div>
+      <button class="btn-more" onclick="showAllExercises()">Больше упражнений →</button>
+    </div>
+  </div>
+
+  <div class="footer-slogans">
+    <span>G² x FIT</span>
+    <span>•</span>
+    <span>Начинаем коллаб</span>
+    <span>•</span>
+    <span>Лучше, чем вчера</span>
+  </div>
+</div>
+
+<!-- ====== МОДАЛЬНОЕ ОКНО АВТОРИЗАЦИИ ====== -->
+<div id="authModal" class="modal hidden">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>Вход в личный кабинет</h3>
+      <button class="modal-close" onclick="closeAuthModal()">✕</button>
+    </div>
+    <div class="auth-card-modal">
+      <div class="input-group">
+        <span class="input-icon">✉</span>
+        <input id="modalEmail" placeholder="Email" type="email">
+      </div>
+      <div class="input-group">
+        <span class="input-icon">🔒</span>
+        <input id="modalPassword" type="password" placeholder="Пароль">
+      </div>
+      <div class="auth-buttons">
+        <button class="btn-primary" onclick="registerFromModal()">Регистрация</button>
+        <button class="btn-secondary" onclick="loginFromModal()">Войти</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ====== ОСНОВНОЕ ПРИЛОЖЕНИЕ (ПОСЛЕ ВХОДА) ====== -->
+<div id="appPage" class="hidden">
+
+  <div class="sidebar">
+    <div class="sidebar-logo">
+      <div class="auth-logo">
+        <span class="logo-fit">G²</span><span class="logo-blyadi"> x FIT</span>
+      </div>
+      <p class="tagline sidebar-tagline">Твоя совесть в приложении 💪</p>
+    </div>
+
+    <nav class="sidebar-nav">
+      <a class="nav-item active" onclick="showSection('calcCard')">
+        <span class="nav-icon">⚡</span> <span>Калькулятор</span>
+      </a>
+      <a class="nav-item" onclick="showSection('mealsCard')">
+        <span class="nav-icon">🍽️</span> <span>Добавить за день</span>
+      </a>
+      <a class="nav-item" onclick="showSection('reportCard')">
+        <span class="nav-icon">📊</span> <span>Отчет</span>
+      </a>
+      <a class="nav-item" onclick="showSection('chatCard')">
+        <span class="nav-icon">🤖</span> <span>AI Помощник</span>
+      </a>
+      <a class="nav-item" onclick="showSection('recipesCard')">
+        <span class="nav-icon">🍳</span> <span>Рецепты</span>
+      </a>
+    </nav>
+
+    <div class="sidebar-motivation">
+      <div class="sidebar-athletes" id="sidebarImages">
+        <!-- сюда будут подгружаться карточки спортсменов -->
+      </div>
+      <div class="motivation-line"></div>
+      <p id="motivationQuote">G² x FIT - твоя совесть в приложении</p>
+    </div>
+  </div>
+
+  <div class="main-content">
+
+    <div class="topbar">
+      <span class="greeting" id="pageTitle">Калькулятор</span>
+      <button class="btn-logout" onclick="logout()">Выйти ⏻</button>
+    </div>
+
+    <div class="cards-grid">
+
+      <!-- КАЛЬКУЛЯТОР БЖУ -->
+      <div class="card" id="calcCard">
+        <div class="card-header">
+          <div class="card-icon">⚡</div>
+          <h2>Калькулятор нормы</h2>
+        </div>
+        
+        <div class="input-group">
+          <span class="input-icon">⚖</span>
+          <input id="weight" placeholder="Вес (кг)" type="number">
+        </div>
+        <div class="input-group">
+          <span class="input-icon">📏</span>
+          <input id="height" placeholder="Рост (см)" type="number">
+        </div>
+        <div class="input-group">
+          <span class="input-icon">👤</span>
+          <input id="age" placeholder="Возраст" type="number">
+        </div>
+        <div class="select-wrapper">
+          <select id="goal">
+            <option value="maintain">⚖️ Поддержание веса</option>
+            <option value="lose">🔥 Похудение</option>
+            <option value="gain">💪 Набор массы</option>
+          </select>
+        </div>
+        <button class="btn-action" onclick="calculateBJU()">
+          Рассчитать <span class="btn-lightning">⚡</span>
+        </button>
+        <div id="bjuResult" class="result-box"></div>
+      </div>
+
+      <!-- ДНЕВНОЙ РАЦИОН -->
+      <div class="card" id="mealsCard" style="display: none;">
+        <div class="card-header">
+          <div class="card-icon">🍽️</div>
+          <h2>Дневной рацион</h2>
+        </div>
+
+        <div class="input-group">
+          <span class="input-icon">📅</span>
+          <input type="date" id="mealDate" value="">
+        </div>
+
+        <div class="meal-buttons">
+          <button class="btn-meal" onclick="addMeal('breakfast')">🍳 Завтрак</button>
+          <button class="btn-meal" onclick="addMeal('lunch')">🍲 Обед</button>
+          <button class="btn-meal" onclick="addMeal('dinner')">🍽️ Ужин</button>
+          <button class="btn-meal" onclick="addMeal('snack')">🍎 Перекус</button>
+        </div>
+
+        <div id="mealsContainer" class="meals-list"></div>
+
+        <div class="daily-total">
+          <strong>📊 Итого за день:</strong>
+          <p id="dailyTotal">🥩 0г | 🧈 0г | 🍚 0г | 🔥 0 ккал</p>
+          <button class="btn-save" onclick="saveDailyToServer()">Сохранить ✔</button>
+        </div>
+      </div>
+
+      <!-- ОТЧЕТ -->
+      <div class="card" id="reportCard" style="display: none;">
+        <div class="card-header">
+          <div class="card-icon">📊</div>
+          <h2>История и прогресс</h2>
+        </div>
+
+        <div class="filter-buttons">
+          <button class="btn-filter" onclick="filterWeek()">Неделя</button>
+          <button class="btn-filter" onclick="filterMonth()">Месяц</button>
+          <button class="btn-filter" onclick="filterAll()">Всё время</button>
+        </div>
+
+        <div class="date-range">
+          <div class="input-group">
+            <span class="input-icon">📅</span>
+            <input type="date" id="startDate">
+          </div>
+          <div class="input-group">
+            <span class="input-icon">📅</span>
+            <input type="date" id="endDate">
+          </div>
+        </div>
+
+        <button class="btn-action btn-show" onclick="loadReport()">
+          Показать отчет <span>›</span>
+        </button>
+
+        <div id="report" class="report-list"></div>
+        <div id="stats"></div>
+      </div>
+
+      <!-- AI ПОМОЩНИК G-BOT -->
+<div class="card" id="chatCard" style="display: none;">
+  <div class="card-header">
+    <div class="card-icon">🤖</div>
+    <h2>G-BOT | AI Ассистент</h2>
+  </div>
+  
+  <div class="gbot-status">
+    <span class="status-dot"></span>
+    <span class="status-text">Online • Always ready</span>
+    <span class="status-version">v2.0</span>
+  </div>
+  
+  <div class="gbot-commands">
+    <div class="commands-title">⚡ G-BOT умеет:</div>
+    <div class="commands-grid" id="commandChips">
+      <!-- Чипы подгружаются динамически и не повторяются -->
+    </div>
+  </div>
+
+  <div id="chatMessages" class="chat-messages">
+    <div class="chat-placeholder">
+      <span class="gbot-wave">👋</span> Привет, я G-BOT — твой персональный AI ассистент.<br>
+      Спрашивай меня о питании, тренировках и рецептах!
+    </div>
+  </div>
+
+  <div class="chat-input-row">
+    <div class="input-group">
+      <span class="input-icon">💬</span>
+      <input type="text" id="chatInput" placeholder="Напиши что-нибудь...">
+    </div>
+    <button class="btn-send" onclick="sendMessage()">➤</button>
+  </div>
+</div>
+
+      <!-- РЕЦЕПТЫ -->
+      <div class="card" id="recipesCard" style="display: none;">
+        <div class="card-header">
+          <div class="card-icon">🍳</div>
+          <h2>Рецепты и рационы</h2>
+        </div>
+
+        <!-- Вкладки -->
+        <div style="display:flex; gap:10px; width:100%; margin-bottom:20px;">
+          <button id="tabMealPlan" onclick="switchRecipeTab('mealplan')" style="flex:1; background:var(--gradient-btn); color:white; border:none; height:40px; border-radius:10px; font-size:13px; cursor:pointer;">📅 Рацион дня</button>
+          <button id="tabProducts" onclick="switchRecipeTab('products')" style="flex:1; background:rgba(255,255,255,0.05); color:var(--text-dim); border:1px solid var(--border); height:40px; border-radius:10px; font-size:13px; cursor:pointer;">🛒 По продуктам</button>
+        </div>
+
+        <!-- Панель: рацион дня -->
+        <div id="panelMealPlan">
+          <div id="recipesList" class="recipes-list"></div>
+        </div>
+
+        <!-- Панель: по продуктам -->
+        <div id="panelProducts" style="display:none;">
+          <p class="chat-hint">Выберите продукты, которые у вас есть:</p>
+          <div id="productsGrid" class="products-grid"></div>
+          <button class="btn-action" onclick="findRecipes()" style="margin-top:20px;">Найти рецепты 🔍</button>
+          <div id="productsRecipesList" class="recipes-list"></div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="footer-slogans-app">
+      <span>G² x FIT</span>
+      <span>•</span>
+      <span>GG. Посчитано</span>
+      <span>•</span>
+      <span>Играем в твою пользу</span>
+    </div>
+
+  </div>
+</div>
+
+<script src="app.js"></script>
+<script>
+  const titles = {
+    'calcCard': 'Калькулятор',
+    'mealsCard': 'Рацион',
+    'reportCard': 'Отчетность',
+    'chatCard': 'AI Помощник',
+    'recipesCard': 'Рецепты'
+  };
+
+  function showSection(sectionId) {
+  const sections = ['calcCard', 'mealsCard', 'reportCard', 'chatCard', 'recipesCard'];
+  sections.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+  
+  const activeSection = document.getElementById(sectionId);
+  if (activeSection) activeSection.style.display = 'flex';
+  
+  document.getElementById('pageTitle').textContent = titles[sectionId] || 'Главная';
+  
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  if (event && event.currentTarget) {
+    event.currentTarget.classList.add('active');
+  }
+
+  // Смена фона при переключении разделов
+  const themeMap = {
+    calcCard: 'calculator',
+    mealsCard: 'meals',
+    reportCard: 'report',
+    chatCard: 'chat',
+    recipesCard: 'recipes'
+  };
+  const theme = themeMap[sectionId] || 'home';
+  if (typeof changeBackground === 'function') {
+    changeBackground(theme);
+  }
+  // Инициализация раздела рецептов
+  if (sectionId === 'recipesCard') {
+    setTimeout(() => {
+      renderMealPlanSection();
+      if (typeof renderProductsGrid === 'function') renderProductsGrid();
+    }, 50);
+  }
+}
+
+  const today = new Date().toISOString().split('T')[0];
+  const dateInput = document.getElementById('mealDate');
+  if (dateInput) {
+    dateInput.value = today;
+  }
+</script>
+<script>
+  function setExample(text) {
+    const input = document.getElementById("chatInput");
+    if (input) {
+      input.value = text;
+      input.focus();
+    }
+  }
+</script>
+</body>
+</html>

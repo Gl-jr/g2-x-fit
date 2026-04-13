@@ -1,0 +1,1697 @@
+/* ============================================================
+   1. ROOT & RESET - Корневые переменные и сброс стилей
+   ============================================================ */
+
+   :root {
+    --bg-dark: #0a0a14;
+    --bg-card: rgba(16, 16, 32, 0.95);
+    --bg-card2: rgba(10, 8, 22, 0.98);
+    --purple: #8b5cf6;
+    --cyan: #06b6d4;
+    --pink: #ec4899;
+    --gradient-btn: linear-gradient(135deg, #06b6d4, #8b5cf6);
+    --text: #e2e8f0;
+    --text-dim: #94a3b8;
+    --border: rgba(139, 92, 246, 0.35);
+    --elem-height: 44px;  /* уменьшено с 52px на 15% */
+    --border-radius: 12px;
+    --spacing: 14px;
+    --spacing-lg: 20px;
+    --spacing-xl: 28px;
+  }
+  
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  
+  body {
+    font-family: 'Rajdhani', 'Arial', sans-serif;
+    background: var(--bg-dark);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+    font-size: 15px;
+  }
+  
+  /* ============================================================
+     2. ФОН И ЧАСТИЦЫ - Фоновые изображения и анимации
+     ============================================================ */
+  
+  .bg-image {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 0;
+    opacity: 0.75;
+    pointer-events: none;
+  }
+  
+  .bg-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, rgba(10, 10, 20, 0.75), rgba(8, 8, 24, 0.85));
+    z-index: 0;
+    pointer-events: none;
+  }
+  
+
+  /* ============================================================
+     3. УТИЛИТЫ - Вспомогательные классы
+     ============================================================ */
+  
+  .hidden { display: none !important; }
+  
+  /* ============================================================
+     4. ОБЩИЕ КНОПКИ - Стили для всех кнопок
+     ============================================================ */
+  
+  button, .btn-action, .btn-primary, .btn-secondary, .btn-save, .btn-meal, .btn-filter, .btn-logout {
+    height: var(--elem-height);
+    padding: 0 28px;  /* увеличено на 20% */
+    border: none;
+    border-radius: var(--border-radius);
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  
+  .btn-primary, .btn-action, .btn-save {
+    background: var(--gradient-btn);
+    color: white;
+    box-shadow: 0 4px 15px rgba(6, 182, 212, 0.2);
+  }
+  
+  .btn-primary:hover, .btn-action:hover, .btn-save:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(6, 182, 212, 0.3);
+  }
+  
+  .btn-secondary, .btn-meal, .btn-filter, .btn-logout {
+    background: rgba(255, 255, 255, 0.03);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+  
+  .btn-secondary:hover, .btn-meal:hover, .btn-filter:hover {
+    background: rgba(139, 92, 246, 0.1);
+    border-color: var(--purple);
+    color: white;
+  }
+  
+  .btn-logout:hover {
+    border-color: var(--pink);
+    color: var(--pink);
+    background: rgba(236, 72, 153, 0.05);
+  }
+  
+  /* ============================================================
+     5. ПОЛЯ ВВОДА - Стили для инпутов и селектов
+     ============================================================ */
+  
+  .input-group, .select-wrapper {
+    position: relative;
+    width: 100%;
+    margin-bottom: 14px;  /* уменьшено */
+  }
+  
+  .input-group input, .select-wrapper select, #startDate, #endDate {
+    width: 100%;
+    height: var(--elem-height);
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--border);
+    border-radius: var(--border-radius);
+    padding: 0 18px;  /* увеличено */
+    color: var(--text);
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 14px;
+    outline: none;
+    transition: 0.2s;
+  }
+  
+  .input-group input:focus, .select-wrapper select:focus {
+    border-color: var(--purple);
+    background: rgba(0, 0, 0, 0.4);
+    box-shadow: 0 0 10px rgba(139, 92, 246, 0.15);
+  }
+  
+  .input-group input::placeholder {
+    color: var(--text-dim);
+  }
+  
+  .input-group .input-icon {
+    position: absolute;
+    left: 16px;  /* увеличено */
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--purple);
+    font-size: 16px;
+    pointer-events: none;
+    z-index: 2;
+  }
+  
+  .input-group input {
+    padding-left: 48px;  /* увеличено */
+  }
+  
+  .select-wrapper select {
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238b5cf6' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>");
+    background-repeat: no-repeat;
+    background-position: right 16px center;
+  }
+  
+  /* ============================================================
+     6. ЛЕЙАУТ И САЙДБАР - Основная структура и боковое меню
+     ============================================================ */
+  
+  .center, #appPage {
+    position: relative;
+    z-index: 10;
+    min-height: 100vh;
+    display: flex;
+  }
+  
+  .center {
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+  }
+  
+  .sidebar {
+    width: 300px;  /* увеличено с 280px на 20% */
+    background: rgba(10, 8, 22, 0.98);
+    border-right: 1px solid var(--border);
+    padding: 28px 20px;  /* уменьшено по вертикали */
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    backdrop-filter: blur(20px);
+    z-index: 100;
+  }
+  
+  .sidebar-logo {
+    margin-bottom: 40px;  /* уменьшено */
+  }
+  
+  .auth-logo {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.5rem;
+    font-weight: 900;
+  }
+  
+  .sidebar-logo .auth-logo {
+    font-size: 1.4rem;
+    text-align: left;
+  }
+  
+  .logo-fit { color: var(--cyan); margin-right: 8px; }
+  .logo-blyadi { color: var(--purple); }
+  
+  .tagline {
+    color: var(--text-dim);
+    font-size: 12px;
+    margin-top: 6px;
+  }
+  
+  .sidebar-tagline {
+    text-align: left;
+  }
+  
+  .sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: 1;
+  }
+  
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    height: 46px;  /* уменьшено */
+    padding: 0 14px;
+    border-radius: var(--border-radius);
+    color: var(--text-dim);
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+    border: 1px solid transparent;
+  }
+  
+  .nav-item:hover:not(.active) {
+    background: rgba(139, 92, 246, 0.08);
+    color: var(--text);
+    border-color: var(--border);
+  }
+  
+  .nav-item.active {
+    background: var(--gradient-btn);
+    color: white;
+    box-shadow: 0 4px 15px rgba(139, 92, 246, 0.25);
+  }
+  
+  .nav-icon {
+    font-size: 20px;
+    width: 30px;
+    text-align: center;
+  }
+  
+  .sidebar-motivation {
+    padding-top: 20px;  /* уменьшено */
+    border-top: 1px solid var(--border);
+    margin-top: auto;
+  }
+  
+  .motivation-line {
+    width: 40px;
+    height: 3px;
+    background: var(--gradient-btn);
+    margin-bottom: 10px;
+    border-radius: 2px;
+  }
+  
+  .sidebar-motivation p {
+    color: var(--text-dim);
+    font-size: 13px;
+    line-height: 1.5;
+    font-style: italic;
+  }
+  
+  /* ============================================================
+     7. ОСНОВНОЙ КОНТЕНТ - Центральная область
+     ============================================================ */
+  
+  .main-content {
+    margin-left: 300px;  /* увеличено */
+    flex: 1;
+    padding: 24px 48px 50px;  /* уменьшено по вертикали, увеличено по горизонтали */
+    min-height: 100vh;
+  }
+  
+  /* ============================================================
+     8. ТОПБАР - Верхняя панель с заголовком
+     ============================================================ */
+  
+  .topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;  /* уменьшено */
+    padding-bottom: 20px;  /* уменьшено */
+    border-bottom: 1px solid var(--border);
+  }
+  
+  .greeting {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.3rem;
+    font-weight: 700;
+    background: var(--gradient-btn);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  .btn-logout {
+    height: 38px;
+    padding: 0 24px;
+    font-size: 13px;
+  }
+  
+  /* ============================================================
+     9. КАРТОЧКИ - Основные блоки с контентом (шире на 20%)
+     ============================================================ */
+  
+  .cards-grid {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    width: 100%;
+  }
+  
+  .card, .auth-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 28px;
+    padding: 30px;  /* уменьшено по вертикали */
+    width: 700px;  /* увеличено с 580px на 20% */
+    max-width: 100%;
+    backdrop-filter: blur(20px);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .auth-card {
+    width: 530px;  /* увеличено с 440px на 20% */
+    background: var(--bg-card2);
+    text-align: center;
+  }
+  
+  .auth-card .input-group input {
+    text-align: left;
+  }
+  
+  .auth-card .tagline {
+    margin: 6px 0 24px;
+  }
+  
+  .auth-buttons {
+    display: flex;
+    gap: 14px;
+    margin-top: 8px;
+    width: 100%;
+  }
+  
+  .auth-buttons button {
+    flex: 1;
+  }
+  
+  .card-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    width: 100%;
+    margin-bottom: 24px;  /* уменьшено */
+    padding-bottom: 15px;  /* уменьшено */
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  }
+  
+  .card-icon {
+    width: 50px;
+    height: 50px;
+    background: rgba(139, 92, 246, 0.1);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    color: var(--purple);
+  }
+  
+  .card h2 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: white;
+  }
+  
+  .card .input-group,
+  .card .select-wrapper,
+  .card button,
+  .card .result-box {
+    width: 100%;
+  }
+  
+  /* ============================================================
+     10. СЕТКИ КНОПОК - Группы кнопок в карточках
+     ============================================================ */
+  
+  .meal-buttons {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    width: 100%;
+    margin-bottom: 20px;  /* уменьшено */
+  }
+  
+  .filter-buttons {
+    display: flex;
+    gap: 12px;
+    width: 100%;
+    margin-bottom: 20px;  /* уменьшено */
+  }
+  
+  .filter-buttons .btn-filter {
+    flex: 1;
+  }
+  
+  .meal-buttons button,
+  .filter-buttons button {
+    width: 100%;
+  }
+  
+  /* ============================================================
+     11. РЕЗУЛЬТАТЫ - Блоки с вычислениями и нормами
+     ============================================================ */
+  
+  .result-box {
+    margin-top: 20px;  /* уменьшено */
+    padding: 14px;
+    background: rgba(139, 92, 246, 0.06);
+    border: 1px solid rgba(139, 92, 246, 0.15);
+    border-radius: 16px;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+  
+  .daily-total {
+    margin-top: 20px;  /* уменьшено */
+    padding: 15px;
+    background: rgba(6, 182, 212, 0.05);
+    border: 1px solid rgba(6, 182, 212, 0.15);
+    border-radius: 16px;
+    width: 100%;
+  }
+  
+  .daily-total strong {
+    font-size: 13px;
+    color: var(--cyan);
+  }
+  
+  .daily-total p {
+    margin: 10px 0 8px;
+    font-size: 15px;
+    font-weight: 600;
+  }
+  
+  /* ============================================================
+     12. ДИАПАЗОН ДАТ - Для фильтрации отчетов
+     ============================================================ */
+  
+  .date-range {
+    display: flex;
+    gap: 14px;
+    width: 100%;
+    margin-bottom: 20px;  /* уменьшено */
+  }
+  
+  .date-range .input-group {
+    flex: 1;
+    margin: 0;
+  }
+  
+  /* ============================================================
+     13. ОТЧЁТ И СТАТИСТИКА - История и прогресс
+     ============================================================ */
+  
+  .report-list {
+    margin-top: 20px;  /* уменьшено */
+    max-height: 280px;
+    overflow-y: auto;
+    width: 100%;
+  }
+  
+  .report-list div {
+    margin: 10px 0;
+    padding: 12px 14px;
+    background: rgba(139, 92, 246, 0.06);
+    border-radius: 14px;
+    border-left: 3px solid var(--purple);
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  
+  .report-list div b {
+    color: var(--cyan);
+  }
+  
+  #stats {
+    margin-top: 16px;
+    width: 100%;
+  }
+  
+  #stats > div {
+    background: rgba(139, 92, 246, 0.06);
+    border: 1px solid rgba(139, 92, 246, 0.15);
+    border-radius: 16px;
+    padding: 15px;
+    font-size: 13px;
+  }
+  
+  #stats h4 {
+    color: var(--cyan);
+    font-size: 14px;
+    margin-bottom: 10px;
+  }
+  
+  progress {
+    width: 100%;
+    height: 6px;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-top: 10px;
+  }
+  
+  progress::-webkit-progress-bar {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+  }
+  
+  progress::-webkit-progress-value {
+    background: var(--gradient-btn);
+    border-radius: 10px;
+  }
+  
+  /* ============================================================
+     14. ПРИЁМЫ ПИЩИ - Список добавленных продуктов
+     ============================================================ */
+  
+  .meals-list {
+    max-height: 250px;
+    overflow-y: auto;
+    margin-bottom: 15px;
+    width: 100%;
+  }
+  
+  #mealsContainer details {
+    margin-bottom: 8px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+  }
+  
+  #mealsContainer summary {
+    padding: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    list-style: none;
+    font-size: 14px;
+  }
+  
+  /* ============================================================
+     15. ЧАТ G-BOT - Telegram-подобные сообщения
+     ============================================================ */
+  
+  .chat-hint {
+    font-size: 14px;
+    color: var(--text-dim);
+    margin-bottom: 20px;
+    width: 100%;
+    text-align: center;
+  }
+  
+  .chat-messages {
+    width: 100%;
+    height: 460px;
+    overflow-y: auto;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 20px;
+    margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  .chat-input-row {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 14px !important;
+    width: 100% !important;
+    background: transparent;
+  }
+  
+  .chat-input-row .input-group {
+    flex: 1 !important;
+    margin-bottom: 0 !important;
+    width: auto !important;
+  }
+  
+  .chat-input-row .input-group input {
+    width: 100% !important;
+    height: 48px !important;
+    border-radius: 16px !important;
+    padding-left: 52px !important;
+    font-size: 15px !important;
+  }
+  
+  .btn-send {
+    width: 70px !important;
+    min-width: 70px !important;
+    height: 48px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: var(--gradient-btn) !important;
+    border-radius: 16px !important;
+    border: none !important;
+    color: white !important;
+    font-size: 22px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    cursor: pointer !important;
+    flex-shrink: 0 !important;
+    transition: transform 0.2s, box-shadow 0.2s !important;
+  }
+  
+  .btn-send:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 5px 15px rgba(6, 182, 212, 0.4) !important;
+  }
+  
+  .chat-input-row .input-icon {
+    left: 18px !important;
+    font-size: 18px !important;
+  }
+  
+  /* Telegram-подобные сообщения */
+  .message-wrapper {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    animation: messageSlideIn 0.3s ease-out;
+  }
+  
+  @keyframes messageSlideIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .user-wrapper {
+    flex-direction: row-reverse;
+  }
+  
+  .message-avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+  
+  .user-avatar {
+    background: linear-gradient(135deg, #06b6d4, #8b5cf6);
+  }
+  
+  .bot-avatar {
+    background: rgba(139, 92, 246, 0.2);
+    border: 1px solid var(--border);
+  }
+  
+  .message-content {
+    max-width: 70%;
+    padding: 10px 16px;
+    border-radius: 18px;
+    position: relative;
+  }
+  
+  .user-message {
+    background: linear-gradient(135deg, #06b6d4, #8b5cf6);
+    color: white;
+    border-bottom-right-radius: 5px;
+  }
+  
+  .bot-message {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-bottom-left-radius: 5px;
+  }
+  
+  .message-sender {
+    font-size: 11px;
+    font-weight: 600;
+    margin-bottom: 4px;
+    opacity: 0.8;
+    letter-spacing: 0.5px;
+  }
+  
+  .user-message .message-sender {
+    color: rgba(255, 255, 255, 0.9);
+  }
+  
+  .bot-message .message-sender {
+    color: var(--cyan);
+  }
+  
+  .message-text {
+    font-size: 14px;
+    line-height: 1.5;
+    word-break: break-word;
+  }
+  
+  .message-text b {
+    font-weight: 700;
+  }
+  
+  .message-text a {
+    color: #06b6d4;
+    text-decoration: underline;
+  }
+  
+  .message-text a:hover {
+    color: #8b5cf6;
+  }
+  
+  .message-time {
+    font-size: 9px;
+    opacity: 0.5;
+    margin-top: 5px;
+    text-align: right;
+  }
+  
+  /* Индикатор печатания */
+  .typing-wrapper .message-content {
+    padding: 10px 22px;
+  }
+  
+  .typing-indicator span {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--cyan);
+    margin: 0 2px;
+    animation: typingBounce 1.4s infinite ease-in-out both;
+  }
+  
+  .typing-indicator span:nth-child(1) { animation-delay: -0.32s; }
+  .typing-indicator span:nth-child(2) { animation-delay: -0.16s; }
+  
+  @keyframes typingBounce {
+    0%, 80%, 100% { 
+      transform: scale(0.6);
+      opacity: 0.4;
+    }
+    40% { 
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+  
+  /* Кнопки действий в чате */
+  .chat-action-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 14px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  .chat-action-buttons button {
+    flex: 1 1 auto;
+    min-width: 100px;
+    padding: 8px 14px;
+    height: auto;
+    background: var(--bg-card) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 40px !important;
+    color: var(--text) !important;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    backdrop-filter: blur(4px);
+  }
+  
+  .chat-action-buttons button:hover {
+    background: rgba(139, 92, 246, 0.15) !important;
+    border-color: var(--purple) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.2);
+  }
+  
+  .chat-action-buttons .btn-logout {
+    background: rgba(236, 72, 153, 0.1) !important;
+    border-color: rgba(236, 72, 153, 0.3) !important;
+    color: var(--pink) !important;
+  }
+  
+  /* G-BOT статус */
+  .gbot-status {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 18px;
+    background: rgba(6, 182, 212, 0.08);
+    border-radius: 50px;
+    margin-bottom: 20px;
+    width: fit-content;
+    border: 1px solid rgba(6, 182, 212, 0.2);
+  }
+  
+  .status-dot {
+    width: 10px;
+    height: 10px;
+    background: #10b981;
+    border-radius: 50%;
+    animation: statusPulse 2s infinite;
+    box-shadow: 0 0 8px #10b981;
+  }
+  
+  @keyframes statusPulse {
+    0% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.8); }
+    100% { opacity: 1; transform: scale(1); }
+  }
+  
+  .status-text {
+    font-size: 12px;
+    color: var(--cyan);
+    font-weight: 600;
+    letter-spacing: 0.5px;
+  }
+  
+  .status-version {
+    font-size: 10px;
+    color: var(--text-dim);
+    background: rgba(255,255,255,0.05);
+    padding: 2px 8px;
+    border-radius: 20px;
+  }
+  
+  /* Команды G-BOT */
+  .gbot-commands {
+    margin-bottom: 20px;
+  }
+  
+  .commands-title {
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    font-weight: 600;
+  }
+  
+  .commands-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  
+  .command-chip {
+    background: rgba(139, 92, 246, 0.1);
+    border: 1px solid var(--border);
+    border-radius: 40px;
+    padding: 6px 14px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text);
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  
+  .command-chip:hover {
+    background: rgba(139, 92, 246, 0.25);
+    border-color: var(--purple);
+    transform: translateY(-2px);
+  }
+  
+  .gbot-wave {
+    display: inline-block;
+    font-size: 26px;
+    margin-right: 8px;
+    animation: waveHand 1s infinite;
+  }
+  
+  @keyframes waveHand {
+    0% { transform: rotate(0deg); }
+    25% { transform: rotate(15deg); }
+    75% { transform: rotate(-15deg); }
+    100% { transform: rotate(0deg); }
+  }
+  
+  .chat-placeholder {
+    color: var(--text-dim);
+    text-align: center;
+    padding: 25px;
+    line-height: 1.6;
+    font-size: 14px;
+  }
+  
+  /* ============================================================
+     16. РЕЦЕПТЫ - Сетка продуктов и карточки рецептов
+     ============================================================ */
+  
+  .products-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    width: 100%;
+    margin-bottom: 20px;
+  }
+  
+  .product-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+  }
+  
+  .product-card:hover {
+    background: rgba(139, 92, 246, 0.1);
+    border-color: var(--purple);
+  }
+  
+  .product-card.selected {
+    background: rgba(139, 92, 246, 0.2);
+    border-color: var(--purple);
+    box-shadow: 0 0 10px rgba(139, 92, 246, 0.3);
+  }
+  
+  .product-emoji {
+    font-size: 26px;
+    margin-bottom: 5px;
+  }
+  
+  .product-name {
+    font-size: 12px;
+    font-weight: 500;
+  }
+  
+  .recipes-list {
+    margin-top: 20px;
+    width: 100%;
+    max-height: 420px;
+    overflow-y: auto;
+  }
+  
+  .recipe-card {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 12px;
+    transition: all 0.2s;
+  }
+  
+  .recipe-card:hover {
+    background: rgba(139, 92, 246, 0.05);
+    border-color: var(--purple);
+  }
+  
+  .recipe-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  
+  .recipe-name {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--cyan);
+  }
+  
+  .recipe-badge {
+    font-size: 11px;
+    background: rgba(139, 92, 246, 0.2);
+    padding: 4px 8px;
+    border-radius: 20px;
+  }
+  
+  .recipe-match-bar {
+    margin: 8px 0;
+  }
+  
+  .recipe-missing {
+    background: rgba(245, 158, 11, 0.1);
+    padding: 6px 10px;
+    border-radius: 8px;
+    margin: 8px 0;
+    font-size: 12px;
+    color: #f59e0b;
+  }
+  
+  .recipe-ready {
+    background: rgba(16, 185, 129, 0.1);
+    padding: 6px 10px;
+    border-radius: 8px;
+    margin: 8px 0;
+    font-size: 12px;
+    color: #10b981;
+  }
+  
+  .recipe-ingredients {
+    font-size: 13px;
+    color: var(--text-dim);
+    margin-bottom: 10px;
+  }
+  
+  .recipe-bju {
+    font-size: 12px;
+    padding: 8px;
+    background: rgba(6, 182, 212, 0.1);
+    border-radius: 10px;
+    margin-bottom: 10px;
+  }
+  
+  .recipe-instructions {
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--text-dim);
+    padding-top: 8px;
+    border-top: 1px solid var(--border);
+  }
+  
+  /* ============================================================
+     17. ГЛАВНАЯ СТРАНИЦА - Hero секция и карточки
+     ============================================================ */
+  
+  .main-page {
+    position: relative;
+    z-index: 10;
+    min-height: 100vh;
+    padding: 20px 60px 50px;  /* уменьшено по вертикали, увеличено по горизонтали */
+    max-width: 1800px;  /* увеличено */
+    margin: 0 auto;
+  }
+  
+  .header-main {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 0 40px;  /* уменьшено по вертикали */
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 40px;
+    flex-wrap: wrap;
+    gap: 24px;
+  }
+  
+  .logo-main {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 2rem;
+    font-weight: 900;
+    background: var(--gradient-btn);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  .btn-cabinet {
+    background: var(--gradient-btn);
+    color: white;
+    border: none;
+    padding: 12px 32px;
+    border-radius: 40px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 4px 15px rgba(6, 182, 212, 0.3);
+  }
+  
+  .btn-cabinet:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(6, 182, 212, 0.4);
+  }
+  
+  .hero-section {
+    text-align: center;
+    margin-bottom: 60px;
+    padding: 40px 24px;
+    background: rgba(139, 92, 246, 0.08);
+    border-radius: 40px;
+    border: 1px solid var(--border);
+  }
+  
+  .hero-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 3.5rem;
+    font-weight: 900;
+    background: var(--gradient-btn);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 16px;
+  }
+  
+  .hero-subtitle {
+    font-size: 1.4rem;
+    color: var(--cyan);
+    margin-bottom: 30px;
+  }
+  
+  .hero-badges {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 16px;
+  }
+  
+  .badge {
+    background: rgba(139, 92, 246, 0.15);
+    border: 1px solid var(--border);
+    padding: 10px 22px;
+    border-radius: 40px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text);
+    transition: all 0.2s;
+  }
+  
+  .badge:hover {
+    background: rgba(139, 92, 246, 0.3);
+    border-color: var(--purple);
+    transform: translateY(-2px);
+  }
+  
+  .main-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));  /* увеличено */
+    gap: 30px;
+    margin-bottom: 60px;
+  }
+  
+  .main-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 28px;
+    padding: 28px;
+    backdrop-filter: blur(20px);
+    transition: all 0.3s;
+  }
+  
+  .main-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    border-color: var(--purple);
+  }
+  
+  .main-card .card-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  
+  .main-card .card-icon {
+    width: 54px;
+    height: 54px;
+    background: var(--gradient-btn);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 26px;
+  }
+  
+  .main-card h2 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: white;
+  }
+  
+  .news-list {
+    max-height: 320px;
+    overflow-y: auto;
+    margin-bottom: 20px;
+  }
+  
+  .news-item {
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  
+  .news-item:hover {
+    padding-left: 8px;
+    color: var(--cyan);
+  }
+  
+  .news-title {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 4px;
+    line-height: 1.4;
+  }
+  
+  .news-date {
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+  
+  .news-source {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+    font-size: 11px;
+    color: var(--text-dim);
+    text-align: center;
+  }
+  
+  .news-source a {
+    color: var(--cyan);
+    text-decoration: none;
+  }
+  
+  .news-source a:hover {
+    text-decoration: underline;
+  }
+  
+  .meal-plans {
+    max-height: 320px;
+    overflow-y: auto;
+    margin-bottom: 20px;
+  }
+  
+  .meal-plan-item {
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  }
+  
+  .meal-plan-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--cyan);
+    margin-bottom: 4px;
+  }
+  
+  .meal-plan-desc {
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+  
+  .exercises-list {
+    max-height: 320px;
+    overflow-y: auto;
+    margin-bottom: 20px;
+  }
+  
+  .exercise-item {
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  
+  .exercise-item:hover {
+    padding-left: 8px;
+    color: var(--cyan);
+  }
+  
+  .exercise-name {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  
+  .exercise-desc {
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+  
+  .btn-more {
+    width: 100%;
+    padding: 12px;
+    background: rgba(139, 92, 246, 0.1);
+    border: 1px solid var(--border);
+    border-radius: 40px;
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  
+  .btn-more:hover {
+    background: rgba(139, 92, 246, 0.2);
+    border-color: var(--purple);
+  }
+  
+  /* ============================================================
+     18. ФУТЕР И МОДАЛЬНОЕ ОКНО - Нижняя часть и попапы
+     ============================================================ */
+  
+  .footer-slogans {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 24px;
+    flex-wrap: wrap;
+    padding: 30px 0 20px;
+    border-top: 1px solid var(--border);
+    color: var(--text-dim);
+    font-size: 13px;
+  }
+  
+  .footer-slogans-app {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 24px;
+    flex-wrap: wrap;
+    margin-top: 50px;
+    padding-top: 30px;
+    border-top: 1px solid var(--border);
+    color: var(--text-dim);
+    font-size: 13px;
+  }
+  
+  .footer-icons {
+    display: flex;
+    gap: 24px;
+    margin-top: 50px;
+    justify-content: center;
+    width: 100%;
+    flex-wrap: wrap;
+  }
+  
+  .footer-item {
+    flex: 1;
+    max-width: 240px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 22px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 22px;
+    text-align: center;
+    transition: 0.3s;
+  }
+  
+  .footer-item:hover {
+    border-color: var(--purple);
+    transform: translateY(-4px);
+  }
+  
+  .footer-icon-circle {
+    width: 56px;
+    height: 56px;
+    background: var(--gradient-btn);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    margin-bottom: 14px;
+    box-shadow: 0 4px 15px rgba(6, 182, 212, 0.2);
+  }
+  
+  .footer-item strong {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 12px;
+    color: white;
+    margin-bottom: 4px;
+  }
+  
+  .footer-item span {
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+  
+  /* Модальное окно */
+  .modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(10px);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .modal-content {
+    background: var(--bg-card2);
+    border: 1px solid var(--border);
+    border-radius: 28px;
+    width: 480px;  /* увеличено */
+    max-width: 90%;
+    animation: modalFadeIn 0.3s ease;
+  }
+  
+  @keyframes modalFadeIn {
+    from {
+      opacity: 0;
+      transform: scale(0.9);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+  
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 22px 28px;
+    border-bottom: 1px solid var(--border);
+  }
+  
+  .modal-header h3 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.2rem;
+    color: var(--cyan);
+  }
+  
+  .modal-close {
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    font-size: 26px;
+    cursor: pointer;
+    padding: 0;
+    width: 34px;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s;
+  }
+  
+  .modal-close:hover {
+    background: rgba(236, 72, 153, 0.2);
+    color: var(--pink);
+  }
+  
+  .auth-card-modal {
+    padding: 26px;
+  }
+  
+  /* ============================================================
+     ДОПОЛНИТЕЛЬНЫЕ СТИЛИ И АДАПТИВНОСТЬ
+     ============================================================ */
+  
+  input[type="date"] {
+    position: relative;
+    padding-left: 48px !important;
+    cursor: pointer;
+    font-family: 'Rajdhani', sans-serif;
+    color: var(--text);
+    appearance: none;
+  }
+  
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    filter: invert(1);
+    opacity: 0.6;
+    cursor: pointer;
+    width: 20px;
+    height: 20px;
+  }
+  
+  .date-range .input-group {
+    min-width: 180px;
+  }
+  
+  #report {
+    padding: 10px 5px;
+    color: var(--text-dim);
+    font-size: 14px;
+  }
+  
+  ::-webkit-scrollbar {
+    width: 5px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background: var(--purple);
+    border-radius: 10px;
+  }
+  
+  /* Адаптивность */
+  @media (max-width: 900px) {
+    .sidebar {
+      width: 90px;
+      padding: 20px 12px;
+    }
+    
+    .sidebar-logo .auth-logo,
+    .sidebar-tagline,
+    .nav-item span:not(.nav-icon),
+    .sidebar-motivation {
+      display: none;
+    }
+    
+    .nav-item {
+      justify-content: center;
+      padding: 0;
+      width: 100%;
+    }
+    
+    .nav-icon {
+      font-size: 22px;
+      width: auto;
+    }
+    
+    .main-content {
+      margin-left: 90px;
+      padding: 20px 24px 40px;
+    }
+    
+    .card, .auth-card {
+      padding: 24px;
+      width: 100%;
+    }
+    
+    .products-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+    
+    .main-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+  
+  @media (max-width: 550px) {
+    .meal-buttons {
+      grid-template-columns: 1fr;
+    }
+    
+    .date-range {
+      flex-direction: column;
+    }
+    
+    .auth-card {
+      width: 95%;
+      padding: 22px 18px;
+    }
+    
+    .auth-buttons {
+      flex-direction: column;
+    }
+    
+    .card-header h2 {
+      font-size: 0.85rem;
+    }
+    
+    .card-icon {
+      width: 42px;
+      height: 42px;
+      font-size: 18px;
+    }
+    
+    .products-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .hero-title {
+      font-size: 2rem;
+    }
+    
+    .hero-subtitle {
+      font-size: 1rem;
+    }
+    
+    .badge {
+      font-size: 11px;
+      padding: 6px 12px;
+    }
+    
+    .main-page {
+      padding: 16px 20px 40px;
+    }
+    
+    .header-main {
+      flex-direction: column;
+      text-align: center;
+    }
+    
+    .footer-slogans, .footer-slogans-app {
+      gap: 12px;
+      font-size: 10px;
+    }
+    
+    .chat-messages {
+      height: 400px;
+    }
+    
+    .chat-action-buttons button {
+      min-width: 80px;
+      font-size: 10px;
+    }
+  }
+
+  .sidebar-athletes {
+    margin-top: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .athlete-card {
+    background: rgba(255,255,255,0.05);
+    border-radius: 12px;
+    padding: 10px;
+    text-align: center;
+    transition: 0.2s;
+  }
+  .athlete-card:hover {
+    background: rgba(139,92,246,0.2);
+    transform: scale(1.02);
+  }
+  .athlete-emoji {
+    font-size: 32px;
+  }
+  .athlete-name {
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-top: 4px;
+  }
