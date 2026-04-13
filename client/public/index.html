@@ -107,6 +107,15 @@
         <span class="input-icon">🔒</span>
         <input id="modalPassword" type="password" placeholder="Пароль">
       </div>
+      
+      <!-- ПОЛЕ ДЛЯ КОДА (ОБЯЗАТЕЛЬНО ДОЛЖНО БЫТЬ) -->
+      <div class="input-group" id="verificationGroup" style="display: none;">
+        <span class="input-icon">🔑</span>
+        <input id="verificationCode" placeholder="Код из письма" type="text" maxlength="4">
+      </div>
+      
+      <button class="btn-secondary" onclick="sendVerificationCode()" style="margin-bottom: 10px; width: 100%;">📧 Отправить код</button>
+      
       <div class="auth-buttons">
         <button class="btn-primary" onclick="registerFromModal()">Регистрация</button>
         <button class="btn-secondary" onclick="loginFromModal()">Войти</button>

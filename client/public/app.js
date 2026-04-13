@@ -1787,3 +1787,145 @@ document.addEventListener("DOMContentLoaded", () => {
   const dateInput = document.getElementById("mealDate");
   if (dateInput) dateInput.addEventListener("change", () => { loadTodayMeals(); });
 });
+
+async function sendVerificationCode() {
+  const email = document.getElementById("modalEmail").value;
+  if (!email) {
+    alert("Введите email сначала");
+    return;
+  }
+  
+  const res = await fetch("http://localhost:3001/send-verification", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({ email })
+  });
+  
+  const data = await res.json();
+  if (data.error) alert(data.error);
+  else {
+    alert("Код отправлен на почту!");
+    document.getElementById("verificationGroup").style.display = "flex";
+  }
+}
+
+async function registerFromModal() {
+  const email = document.getElementById("modalEmail").value;
+  const password = document.getElementById("modalPassword").value;
+  const code = document.getElementById("verificationCode").value;
+  
+  if (!code) {
+    alert("Введите код из письма");
+    return;
+  }
+  
+  const res = await fetch("http://localhost:3001/register", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({ email, password, verificationCode: code })
+  });
+  
+  const data = await res.json();
+  if (data.error) alert(data.error);
+  else {
+    alert("Регистрация успешна!");
+    localStorage.setItem("token", data.token);
+    localStorage.setItem("userId", data.userId);
+    location.reload();
+  }
+}
+
+
+// ============================================================
+// 17. ВЕРИФИКАЦИЯ EMAIL
+// ============================================================
+
+async function sendVerificationCode() {
+  const email = document.getElementById("modalEmail").value;
+  if (!email) {
+    alert("Введите email сначала");
+    return;
+  }
+  
+  const res = await fetch("http://localhost:3001/send-verification", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({ email })
+  });
+  
+  const data = await res.json();
+  if (data.error) {
+    alert(data.error);
+  } else {
+    alert("Код отправлен! Проверьте почту или терминал сервера.");
+    document.getElementById("verificationGroup").style.display = "flex";
+  }
+}
+
+async function registerFromModal() {
+  const email = document.getElementById("modalEmail").value;
+  const password = document.getElementById("modalPassword").value;
+  const code = document.getElementById("verificationCode").value;
+  
+  if (!email) {
+    alert("Введите email");
+    return;
+  }
+  
+  if (!password) {
+    alert("Введите пароль");
+    return;
+  }
+  
+  if (!code) {
+    alert("Введите код из письма. Если кода нет, нажмите 'Отправить код'");
+    return;
+  }
+  
+  const res = await fetch("http://localhost:3001/register", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({ email, password, verificationCode: code })
+  });
+  
+  const data = await res.json();
+  if (data.error) {
+    alert(data.error);
+  } else {
+    alert("Регистрация успешна!");
+    localStorage.setItem("token", data.token);
+    localStorage.setItem("userId", data.userId);
+    closeAuthModal();
+    showApp();
+    loadUserNorm();
+    loadTodayMeals();
+    renderProductsGrid();
+  }
+}
+
+// Переопределяем loginFromModal (оставляем как есть, без кода)
+async function loginFromModal() {
+  const email = document.getElementById("modalEmail").value;
+  const password = document.getElementById("modalPassword").value;
+  
+  const res = await fetch("http://localhost:3001/login", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({ email, password })
+  });
+  
+  const data = await res.json();
+  if (data.error) {
+    alert(data.error);
+    return;
+  }
+  token = data.token;
+  userId = data.userId;
+  localStorage.setItem("token", token);
+  localStorage.setItem("userId", userId);
+  closeAuthModal();
+  showApp();
+  loadUserNorm();
+  loadTodayMeals();
+  renderProductsGrid();
+}
