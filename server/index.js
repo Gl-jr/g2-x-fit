@@ -1,10 +1,9 @@
-const express = require('express');
-const cors = require('cors');
-const path = require('path');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const mongoose = require('mongoose');
-const { Resend } = require('resend');
+const express = require('express'); // фрейморвк для сервера
+const cors = require('cors'); //разрешает запросы с других доменов
+const path = require('path'); // работа спутями файлов
+const bcrypt = require('bcryptjs');  // хэш паролей
+const jwt = require('jsonwebtoken');  // создание токенов для авторизации 
+const mongoose = require('mongoose');  // работа с БД
 
 const app = express();
 app.use(cors());
@@ -50,9 +49,6 @@ const User = mongoose.model('User', UserSchema);
 const Food = mongoose.model('Food', FoodSchema);
 const Norm = mongoose.model('Norm', NormSchema);
 
-// ===== НАСТРОЙКА RESEND =====
-const resend = new Resend('re_bFdNiiG1_A2NFfTh6UfNH5fQ7BMjFVzeb');
-
 // Временное хранилище кодов
 const verificationCodes = new Map();
 
@@ -62,7 +58,7 @@ function generateCode() {
 
 // ========== API МАРШРУТЫ ==========
 
-// ОТПРАВКА КОДА
+// ОТПРАВКА КОДА (только в терминал)
 app.post('/send-verification', async (req, res) => {
   const { email } = req.body;
   
@@ -85,24 +81,7 @@ app.post('/send-verification', async (req, res) => {
   console.log(`📧 КОД ДЛЯ ${email}: ${code}`);
   console.log('=========================================');
   
-  try {
-    const { data, error } = await resend.emails.send({
-      from: 'G² x FIT <onboarding@resend.dev>',
-      to: email,
-      subject: 'Подтверждение регистрации — G² x FIT',
-      html: `<div>Ваш код: ${code}</div>`
-    });
-    
-    if (error) {
-      console.log('❌ Resend ошибка:', error);
-    } else {
-      console.log('✅ Resend ответ:', data);
-    }
-  } catch (err) {
-    console.log('❌ Исключение:', err);
-  }
-  
-  res.json({ message: 'Код отправлен на почту' });
+  res.json({ message: 'Код отправлен (проверьте терминал сервера)' });
 });
 
 // РЕГИСТРАЦИЯ
@@ -312,20 +291,7 @@ app.post('/forgot-password', async (req, res) => {
   
   console.log(`🔐 КОД ДЛЯ СБРОСА ПАРОЛЯ (${email}): ${code}`);
   
-  try {
-    await resend.emails.send({
-      from: 'G² x FIT <onboarding@resend.dev>',
-      to: email,
-      subject: 'Восстановление пароля — G² x FIT',
-      html: `<div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; background: #0a0a14; color: #e2e8f0; border-radius: 20px;">
-        <h1 style="color: #06b6d4;">G² x FIT</h1>
-        <h2>Код для сброса пароля: <strong style="font-size: 32px;">${code}</strong></h2>
-        <p>Код действителен 10 минут.</p>
-      </div>`
-    });
-  } catch(e) { console.log('Письмо не отправлено'); }
-  
-  res.json({ message: 'Код для сброса пароля отправлен' });
+  res.json({ message: 'Код для сброса пароля отправлен (проверьте терминал)' });
 });
 
 app.post('/reset-password', async (req, res) => {

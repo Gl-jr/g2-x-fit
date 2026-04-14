@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>G² x FIT - Твоя совесть в приложении</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -91,11 +91,12 @@
   </div>
 </div>
 
+<!-- ====== МОДАЛЬНОЕ ОКНО АВТОРИЗАЦИИ ====== -->
 <div id="authModal" class="modal hidden">
   <div class="modal-content">
     <div class="modal-header">
       <h3>Вход в личный кабинет</h3>
-      <button class="modal-close" onclick="closeAuthModal()">✕</button>
+      <button class="btn-link" onclick="forgotPassword()" style="background:none; border:none; color:var(--cyan); margin-top:10px; width:100%; cursor:pointer;">🔐 Забыли пароль?</button>
     </div>
     <div class="auth-card-modal">
       <div class="input-group">
@@ -107,7 +108,7 @@
         <input id="modalPassword" type="password" placeholder="Пароль">
       </div>
       
-      <!-- ПОЛЕ ДЛЯ КОДА -->
+      <!-- ПОЛЕ ДЛЯ КОДА (ОБЯЗАТЕЛЬНО ДОЛЖНО БЫТЬ) -->
       <div class="input-group" id="verificationGroup" style="display: none;">
         <span class="input-icon">🔑</span>
         <input id="verificationCode" placeholder="Код из письма" type="text" maxlength="4">
@@ -119,8 +120,6 @@
         <button class="btn-primary" onclick="registerFromModal()">Регистрация</button>
         <button class="btn-secondary" onclick="loginFromModal()">Войти</button>
       </div>
-      
-      <button class="btn-link" onclick="forgotPassword()" style="background:none; border:none; color:var(--cyan); margin-top: 15px; width: 100%; cursor: pointer;">🔐 Забыли пароль?</button>
     </div>
   </div>
 </div>
