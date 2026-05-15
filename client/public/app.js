@@ -12,13 +12,9 @@ let todayMeals = {
   snack: []
 };
 
-let pendingFoodResult = null;
-
 let foodDatabase = {};
 let recipes = [];
 let availableProducts = [];
-
-let currentTheme = "home";
 
 // ============================================================
 // 2. ЗАГРУЗКА ДАННЫХ + РЕЦЕПТЫ
@@ -160,79 +156,7 @@ function useFallbackData() {
   renderProductsGrid();
 }
 
-// ============================================================
-// 2.5. ДИНАМИЧЕСКИЙ ФОН
-// ============================================================
-
-function changeBackground(theme) {
-  console.log('changeBackground вызвана с темой:', theme);
-  
-  const bgImage = document.querySelector('.bg-image');
-  if (!bgImage) {
-    console.error('bg-image не найден в DOM');
-    return;
-  }
-  
-  // ПРАВИЛЬНЫЕ ПУТИ (относительно папки public)
-  let imagePath = '';
-  
-  switch(theme) {
-    case 'calculator':
-      imagePath = '/assets/images/calculator.png';
-      break;
-    case 'meals':
-      imagePath = '/assets/images/bju.png';
-      break;
-    case 'report':
-      imagePath = '/assets/images/report.png';
-      break;
-    case 'chat':
-      imagePath = '/assets/images/chat.png';
-      break;
-    case 'recipes':
-      imagePath = '/assets/images/recipes.png';
-      break;
-    case 'home':
-    default:
-      imagePath = '/assets/images/home.png';
-      break;
-  }
-  
-  bgImage.src = imagePath;
-  bgImage.style.opacity = '0.3';
-  console.log('Фон установлен:', imagePath);
-
-  const overlay = document.querySelector('.bg-overlay');
-  if (overlay) {
-    let gradient = '';
-    switch(theme) {
-      case 'calculator': gradient = 'linear-gradient(135deg, rgba(6, 182, 212, 0.2), rgba(139, 92, 246, 0.25))'; break;
-      case 'meals': gradient = 'linear-gradient(135deg, rgba(236, 72, 153, 0.15), rgba(139, 92, 246, 0.2))'; break;
-      case 'report': gradient = 'linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(6, 182, 212, 0.2))'; break;
-      case 'chat': gradient = 'linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(6, 182, 212, 0.15))'; break;
-      case 'recipes': gradient = 'linear-gradient(135deg, rgba(236, 72, 153, 0.15), rgba(16, 185, 129, 0.2))'; break;
-      default: gradient = 'linear-gradient(135deg, rgba(10, 10, 20, 0.7), rgba(8, 8, 24, 0.8))';
-    }
-    overlay.style.background = gradient;
-  }
-}
-
-function renderSidebarImages() {
-  const container = document.getElementById("sidebarImages");
-  if (!container) return;
-  const athletes = [
-    { emoji: "🏋️", name: "Тяжёлая атлетика" },
-    { emoji: "🏃", name: "Бег" },
-    { emoji: "🧘", name: "Йога" },
-    { emoji: "🥊", name: "Бокс" }
-  ];
-  container.innerHTML = athletes.map(a => `
-    <div class="athlete-card">
-      <div class="athlete-emoji">${a.emoji}</div>
-      <div class="athlete-name">${a.name}</div>
-    </div>
-  `).join('');
-}
+// (динамический фон убран — отдельный фон-картинка больше не используется)
 
 // ============================================================
 // 3. OPEN FOOD FACTS API
@@ -343,7 +267,6 @@ function getSelectedDate() {
 
 window.onload = async () => {
   await loadData();
-  renderSidebarImages();
   if (token && userId) {
     showApp();
     loadUserNorm();
@@ -354,45 +277,16 @@ window.onload = async () => {
 function showApp() {
   document.getElementById("mainPage").classList.add("hidden");
   document.getElementById("appPage").classList.remove("hidden");
-  changeBackground('calculator');
+
+  // Показываем вкладку "Группа" только тренерам
+  const role = localStorage.getItem('role') || 'student';
+  const coachNav = document.querySelector('.nav-coach');
+  if (coachNav) coachNav.style.display = (role === 'coach') ? 'flex' : 'none';
 }
 
 function logout() {
   localStorage.clear();
   location.reload();
-}
-
-async function register() {
-  const email = document.getElementById("email");
-  const password = document.getElementById("password");
-  const res = await fetch("http://localhost:3001/register", {
-    method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({ email: email.value, password: password.value })
-  });
-  const data = await res.json();
-  if (data.error) alert(data.error);
-  else alert("Регистрация успешна! Теперь войдите.");
-}
-
-async function login() {
-  const email = document.getElementById("email");
-  const password = document.getElementById("password");
-  const res = await fetch("http://localhost:3001/login", {
-    method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({ email: email.value, password: password.value })
-  });
-  const data = await res.json();
-  if (data.error) { alert(data.error); return; }
-  token = data.token;
-  userId = data.userId;
-  localStorage.setItem("token", token);
-  localStorage.setItem("userId", userId);
-  showApp();
-  loadUserNorm();
-  loadTodayMeals();
-  renderProductsGrid();
 }
 
 // ============================================================
@@ -819,225 +713,10 @@ function suggestToBuy(missingIngredients) {
 }
 
 // ============================================================
-// 11. G-BOT (Telegram-подобные сообщения)
+//  11. (УДАЛЕНО) AI-АССИСТЕНТ G-BOT — раздел больше не используется
 // ============================================================
 
-let chatHistory = [];
-
-function addChatMessage(type, text, showButtons = false, extraData = null) {
-  const chatDiv = document.getElementById("chatMessages");
-  const now = new Date();
-  const timeString = now.toLocaleTimeString('ru-RU', { hour:'2-digit', minute:'2-digit' });
-  const placeholder = chatDiv.querySelector('.chat-placeholder');
-  if (placeholder && chatDiv.children.length === 1) chatDiv.innerHTML = "";
-  const messageContainer = document.createElement("div");
-  messageContainer.className = `message-wrapper ${type === 'user' ? 'user-wrapper' : 'bot-wrapper'}`;
-  const avatar = document.createElement("div");
-  avatar.className = `message-avatar ${type === 'user' ? 'user-avatar' : 'bot-avatar'}`;
-  avatar.innerHTML = type === 'user' ? '👤' : '🤖';
-  const contentDiv = document.createElement("div");
-  contentDiv.className = `message-content ${type === 'user' ? 'user-message' : 'bot-message'}`;
-  const senderName = document.createElement("div");
-  senderName.className = "message-sender";
-  senderName.innerHTML = type === 'user' ? 'Вы' : 'G-BOT';
-  const textDiv = document.createElement("div");
-  textDiv.className = "message-text";
-  let formattedText = text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank" style="color:#06b6d4; text-decoration:underline;">$1</a>').replace(/\n/g, '<br>');
-  textDiv.innerHTML = formattedText;
-  const timeDiv = document.createElement("div");
-  timeDiv.className = "message-time";
-  timeDiv.innerHTML = timeString;
-  contentDiv.appendChild(senderName);
-  contentDiv.appendChild(textDiv);
-  contentDiv.appendChild(timeDiv);
-  if (showButtons) {
-    const btnDiv = document.createElement("div");
-    btnDiv.className = "chat-action-buttons";
-    btnDiv.id = "mealActionButtons";
-    btnDiv.innerHTML = `
-      <div style="font-size:12px; color:var(--text-dim); margin-bottom:8px;">➕ Добавить в приём пищи:</div>
-      <div style="display:flex; flex-wrap:wrap; gap:8px;">
-        <button onclick="addToMeal('breakfast')" style="flex:1; min-width:100px;">🍳 Завтрак</button>
-        <button onclick="addToMeal('lunch')" style="flex:1; min-width:100px;">🍲 Обед</button>
-        <button onclick="addToMeal('dinner')" style="flex:1; min-width:100px;">🍽️ Ужин</button>
-        <button onclick="addToMeal('snack')" style="flex:1; min-width:100px;">🍎 Перекус</button>
-        <button onclick="cancelAdd()" style="flex:1; min-width:100px; background:rgba(236,72,153,0.15); border:1px solid rgba(236,72,153,0.3); color:var(--pink);">❌ Отмена</button>
-      </div>`;
-    contentDiv.appendChild(btnDiv);
-  }
-  messageContainer.appendChild(avatar);
-  messageContainer.appendChild(contentDiv);
-  chatDiv.appendChild(messageContainer);
-  chatDiv.scrollTo({ top: chatDiv.scrollHeight, behavior: 'smooth' });
-  chatHistory.push({ type, text, time: timeString });
-  if (chatHistory.length > 50) chatHistory.shift();
-}
-
-function showTypingIndicator() {
-  const chatDiv = document.getElementById("chatMessages");
-  const existing = document.getElementById("typingIndicator");
-  if (existing) existing.remove();
-  const typingWrapper = document.createElement("div");
-  typingWrapper.id = "typingIndicator";
-  typingWrapper.className = "message-wrapper bot-wrapper typing-wrapper";
-  const avatar = document.createElement("div");
-  avatar.className = "message-avatar bot-avatar";
-  avatar.innerHTML = '🤖';
-  const contentDiv = document.createElement("div");
-  contentDiv.className = "message-content bot-message typing-indicator";
-  contentDiv.innerHTML = "<span>●</span><span>●</span><span>●</span>";
-  typingWrapper.appendChild(avatar);
-  typingWrapper.appendChild(contentDiv);
-  chatDiv.appendChild(typingWrapper);
-  chatDiv.scrollTop = chatDiv.scrollHeight;
-}
-
-function hideTypingIndicator() {
-  const typing = document.getElementById("typingIndicator");
-  if (typing) typing.remove();
-}
-
-function setExample(text) {
-  const input = document.getElementById("chatInput");
-  if (input) { input.value = text; input.focus(); }
-}
-
-async function sendMessage() {
-  const input = document.getElementById("chatInput");
-  const message = input.value.trim();
-  if (!message) return;
-  addChatMessage("user", message);
-  input.value = "";
-  showTypingIndicator();
-  const lowerMsg = message.toLowerCase();
-  if (lowerMsg.includes("статистик") || lowerMsg.includes("прогресс") || lowerMsg.includes("мои показатели")) await handleStatsRequest();
-  else if (lowerMsg.includes("норма") || lowerMsg.includes("сколько нужно") || lowerMsg.includes("дневная норма")) await handleNormRequest();
-  else if (lowerMsg.includes("видео") || lowerMsg.includes("техника") || lowerMsg.includes("как делать") || lowerMsg.includes("упражнение")) await handleVideoRequest(message);
-  else if (lowerMsg.includes("рецепт") || lowerMsg.includes("приготовить") || lowerMsg.includes("блюдо")) await handleRecipeRequest(message);
-  else if (lowerMsg.includes("мотивация") || lowerMsg.includes("вдохновение") || lowerMsg.includes("поддержка")) handleMotivationRequest();
-  else if (lowerMsg.includes("совет") || lowerMsg.includes("что такое") || lowerMsg.includes("как")) handleTipRequest(lowerMsg);
-  else {
-    const parsed = parseFoodMessage(message);
-    if (parsed) await handleProductRequest(parsed);
-    else setTimeout(() => { hideTypingIndicator(); addChatMessage("bot", "❌ Не совсем понял запрос.\n\n💡 **Примеры:**\n• 200 г курицы\n• рецепт с курицей и рисом\n• техника приседаний\n• моя статистика\n• что такое БЖУ\n• мотивация"); }, 500);
-  }
-}
-
-async function handleStatsRequest() {
-  if (!userId) { hideTypingIndicator(); addChatMessage("bot", "🔐 Войдите в личный кабинет!"); return; }
-  try {
-    const res = await fetch(`http://localhost:3001/stats/${userId}`);
-    const stats = await res.json();
-    if (stats.error) { hideTypingIndicator(); addChatMessage("bot", "📊 Сначала рассчитайте норму БЖУ!"); return; }
-    const percent = stats.totalDays > 0 ? Math.round((stats.daysInNorm / stats.totalDays)*100) : 0;
-    let response = `📊 **Твоя статистика:**\n\n✅ Дней в норме: **${stats.daysInNorm}**\n❌ Дней вне нормы: **${stats.daysOutOfNorm}**\n📈 Процент соблюдения: **${percent}%**\n📆 Всего дней: **${stats.totalDays}**\n\n🎯 Твоя дневная норма:\n🥩 Белки: ${Math.round(stats.norm.protein)} г\n🧈 Жиры: ${Math.round(stats.norm.fat)} г\n🍚 Углеводы: ${Math.round(stats.norm.carbs)} г\n🔥 Калории: ${Math.round(stats.norm.calories)} ккал\n\n💪 GG! Так держать!`;
-    hideTypingIndicator(); addChatMessage("bot", response);
-  } catch(e) { hideTypingIndicator(); addChatMessage("bot", "❌ Ошибка загрузки статистики."); }
-}
-
-async function handleNormRequest() {
-  if (!userId) { hideTypingIndicator(); addChatMessage("bot", "🔐 Войдите в личный кабинет!"); return; }
-  try {
-    const res = await fetch(`http://localhost:3001/norm/${userId}`);
-    const norm = await res.json();
-    if (norm.error) { hideTypingIndicator(); addChatMessage("bot", "📊 Сначала рассчитайте норму в калькуляторе!"); return; }
-    let response = `📊 **Твоя персональная норма:**\n\n🎯 ${norm.goal === 'lose' ? 'Похудение' : norm.goal === 'gain' ? 'Набор массы' : 'Поддержание веса'}\n\n🔥 Калории: **${Math.round(norm.calories)}** ккал\n🥩 Белки: **${Math.round(norm.protein)}** г\n🧈 Жиры: **${Math.round(norm.fat)}** г\n🍚 Углеводы: **${Math.round(norm.carbs)}** г\n\n💡 GG! Придерживайся этих значений!`;
-    hideTypingIndicator(); addChatMessage("bot", response);
-  } catch(e) { hideTypingIndicator(); addChatMessage("bot", "❌ Не удалось загрузить норму."); }
-}
-
-async function handleVideoRequest(query) {
-  let exercise = query.replace(/видео|техника|как делать|упражнение|найди|покажи/gi,'').trim();
-  if (!exercise) exercise = "тренировка";
-  const videoDatabase = {
-    "приседание":{title:"Как правильно делать приседания со штангой",url:"https://youtu.be/aclHkVu9j0o"},
-    "становая":{title:"Техника становой тяги",url:"https://youtu.be/1ZXobu7JwhE"},
-    "жим":{title:"Техника жима лёжа",url:"https://youtu.be/rT7DgCr-3pg"},
-    "подтягивание":{title:"Как научиться подтягиваться",url:"https://youtu.be/eGo4IYjbE6g"},
-    "отжимание":{title:"Техника отжиманий",url:"https://youtu.be/IODxDxX7oi4"},
-    "пресс":{title:"Топ упражнений на пресс",url:"https://youtu.be/EIj0OiWbVp4"},
-    "планка":{title:"Как правильно делать планку",url:"https://youtu.be/pSHjTRCQxIw"}
-  };
-  hideTypingIndicator();
-  let found = false, videoTitle="", videoUrl="";
-  for (const [key, video] of Object.entries(videoDatabase)) {
-    if (exercise.includes(key)) { videoTitle=video.title; videoUrl=video.url; found=true; break; }
-  }
-  if (found) addChatMessage("bot", `🎥 **${videoTitle}**\n\n🔗 [Смотреть видео на YouTube](${videoUrl})\n\n💡 GG! Смотри и отрабатывай технику!`);
-  else addChatMessage("bot", `🎥 **Видео по запросу "${exercise}"**\n\n🔗 [Найти видео на YouTube](https://youtube.com/results?search_query=${encodeURIComponent(exercise+' техника выполнения')})\n\n💡 GG! Смотри и совершенствуй технику!`);
-}
-
-async function handleRecipeRequest(query) {
-  hideTypingIndicator();
-  const recipesList = [
-    { name:"🍗 Курица с рисом", ingredients:["курица","рис"], calories:450, protein:35, fat:12, carbs:45 },
-    { name:"🥚 Омлет с овощами", ingredients:["яйца","овощи"], calories:320, protein:22, fat:18, carbs:8 },
-    { name:"🥣 Овсяная каша", ingredients:["овсянка","молоко"], calories:340, protein:12, fat:8, carbs:55 },
-    { name:"🥢 Тофу с овощами", ingredients:["тофу","овощи"], calories:248, protein:20, fat:12, carbs:15 },
-    { name:"🍲 Чечевичный суп", ingredients:["чечевица","овощи"], calories:207, protein:15, fat:3, carbs:30 },
-    { name:"🥗 Киноа с овощами", ingredients:["киноа","овощи"], calories:214, protein:12, fat:6, carbs:28 }
-  ];
-  let response = `🍳 **Рецепты по твоему запросу:**\n\n`;
-  recipesList.slice(0,3).forEach(recipe => {
-    response += `📖 **${recipe.name}**\n   Ингредиенты: ${recipe.ingredients.join(", ")}\n   🔥 ${recipe.calories} ккал | 🥩 ${recipe.protein}г | 🧈 ${recipe.fat}г | 🍚 ${recipe.carbs}г\n\n`;
-  });
-  response += `💡 GG! Хочешь добавить что-то в рацион? Просто напиши!`;
-  addChatMessage("bot", response);
-}
-
-function handleMotivationRequest() {
-  hideTypingIndicator();
-  const quotes = ["💪 GG! Ты уже сделал первый шаг!","🔥 Сегодня ты лучше, чем вчера!","🎯 Дисциплина сегодня — свобода завтра!","⚡ GG x FIT — играем в твою пользу!","💯 Лучше, чем вчера — уже GG!"];
-  addChatMessage("bot", `${quotes[Math.floor(Math.random()*quotes.length)]}\n\n💪 GG! Продолжай в том же духе!`);
-}
-
-function handleTipRequest(query) {
-  hideTypingIndicator();
-  if (query.includes("бжу")) addChatMessage("bot", "📚 **Что такое БЖУ?**\n\nБелки — 4 ккал/г\nЖиры — 9 ккал/г\nУглеводы — 4 ккал/г\n\n💡 Баланс БЖУ — ключ к успеху!");
-  else if (query.includes("белок")) addChatMessage("bot", "🥩 **Совет по белку:**\n\n1.6-2.2 г на кг веса. Источники: курица, рыба, яйца, творог, протеин.\n\n💪 GG!");
-  else addChatMessage("bot", "📚 **Совет G-BOT:**\n\n• Пей воду — 30 мл на кг веса\n• Не пропускай приёмы пищи\n• Спи 7-8 часов\n• Веди дневник питания\n\n💪 GG!");
-}
-
-async function handleProductRequest(parsed) {
-  const productInfo = await findProduct(parsed.productName, parsed.amount, parsed.unit);
-  hideTypingIndicator();
-  if (!productInfo) { addChatMessage("bot", `❌ Продукт "${parsed.productName}" не найден.\n💡 Попробуй: ${availableProducts.slice(0,5).join(", ")}`); return; }
-  let multiplier = 1;
-  if (productInfo.unit === 'g' || productInfo.unit === 'ml') multiplier = productInfo.amount / (productInfo.perUnit || 100);
-  else if (productInfo.unit === 'pcs') multiplier = productInfo.amount;
-  const protein = productInfo.protein * multiplier;
-  const fat = productInfo.fat * multiplier;
-  const carbs = productInfo.carbs * multiplier;
-  const calories = Math.round(protein*4 + fat*9 + carbs*4);
-  let response = `✅ **${productInfo.name}** (${parsed.amount} ${parsed.unit})\n\n📊 **БЖУ:**\n🥩 Белки: ${protein.toFixed(1)} г\n🧈 Жиры: ${fat.toFixed(1)} г\n🍚 Углеводы: ${carbs.toFixed(1)} г\n🔥 Калории: ${calories} ккал\n\n➕ Добавить в рацион?`;
-  pendingFoodResult = { details: [{ name: productInfo.name, amount: parsed.amount, unit: parsed.unit, protein: protein.toFixed(1), fat: fat.toFixed(1), carbs: carbs.toFixed(1) }] };
-  addChatMessage("bot", response, true);
-}
-
-function addToMeal(mealType) {
-  if (!pendingFoodResult) { addChatMessage("bot", "❌ Нет продукта для добавления. Сначала спроси о продукте!"); return; }
-  for (const detail of pendingFoodResult.details) {
-    todayMeals[mealType].push({
-      name: detail.name, amount: detail.amount, unit: detail.unit,
-      protein: parseFloat(detail.protein), fat: parseFloat(detail.fat), carbs: parseFloat(detail.carbs)
-    });
-  }
-  saveTodayMeals();
-  const mealNames = { breakfast: "🍳 Завтрак", lunch: "🍲 Обед", dinner: "🍽️ Ужин", snack: "🍎 Перекус" };
-  const detail = pendingFoodResult.details[0];
-  // Убираем кнопки после добавления
-  const btns = document.getElementById("mealActionButtons");
-  if (btns) btns.remove();
-  addChatMessage("bot", `✅ **${detail.name}** добавлено в **${mealNames[mealType]}**!\n\n🥩 ${detail.protein}г белков | 🧈 ${detail.fat}г жиров | 🍚 ${detail.carbs}г углеводов\n\n💡 Переключись на вкладку «Рацион» чтобы увидеть итого за день!`);
-  pendingFoodResult = null;
-}
-function cancelAdd() {
-  pendingFoodResult = null;
-  const btns = document.getElementById("mealActionButtons");
-  if (btns) btns.remove();
-  addChatMessage("bot", "❌ Добавление отменено");
-}
-function getMealName(type) { const names = { breakfast:"Завтрак", lunch:"Обед", dinner:"Ужин", snack:"Перекус" }; return names[type]; }
+// (раздел AI-ассистента удалён полностью)
 
 // ============================================================
 // 12. ГЛАВНАЯ СТРАНИЦА (НОВОСТИ)
@@ -1297,60 +976,7 @@ const WORKOUT_TYPES = {
       ]},
     ]
   },
-  cardio: {
-    name: "🏃 Кардио программа",
-    desc: "Сжигание жира и улучшение выносливости. Для начинающих и продолжающих.",
-    days: [
-      { day: "День 1 — HIIT (20 мин)", exercises: [
-        { name:"Бёрпи", sets:"4×30 сек / 15 сек отдых", tip:"Максимальная интенсивность" },
-        { name:"Прыжки на месте (джампинг джек)", sets:"4×30 сек", tip:"Руки активно работают" },
-        { name:"Бег на месте с высоким подъёмом колен", sets:"4×30 сек", tip:"Колени до пояса" },
-        { name:"Скалолаз (mountain climber)", sets:"4×30 сек", tip:"Спина ровная, темп высокий" },
-        { name:"Прыжки в стороны (lateral jumps)", sets:"4×30 сек", tip:"Мягкое приземление" },
-      ]},
-      { day: "День 2 — Бег / Велосипед (40 мин)", exercises: [
-        { name:"Разминка — ходьба", sets:"5 мин", tip:"ЧСС 50-60% от макс" },
-        { name:"Лёгкий бег", sets:"10 мин", tip:"ЧСС 65-70% — можешь говорить" },
-        { name:"Умеренный темп", sets:"15 мин", tip:"ЧСС 70-80% — тяжело говорить" },
-        { name:"Ускорение", sets:"5 мин", tip:"ЧСС 80-90% — максимальное усилие" },
-        { name:"Заминка — ходьба", sets:"5 мин", tip:"Восстановление пульса" },
-      ]},
-      { day: "День 3 — Круговая тренировка", exercises: [
-        { name:"Прыжки со скакалкой", sets:"3×2 мин", tip:"Приземление на носки" },
-        { name:"Отжимания", sets:"3×15-20", tip:"Тело в одну линию" },
-        { name:"Приседания с прыжком", sets:"3×15", tip:"Мягкое приземление" },
-        { name:"Планка", sets:"3×45 сек", tip:"Не прогибай поясницу" },
-        { name:"Пресс — скручивания", sets:"3×20", tip:"Поясница прижата к полу" },
-      ]},
-    ]
-  },
-  strength: {
-    name: "🏋️ Силовая программа",
-    desc: "Максимальное развитие силы. Базовые движения, малые повторения.",
-    days: [
-      { day: "День 1 — Присед (80-90% от макс)", exercises: [
-        { name:"Приседания со штангой", sets:"5×5", tip:"Работаем с большим весом, не менее 3 мин отдых" },
-        { name:"Фронтальные приседания", sets:"3×5", tip:"Акцент на квадрицепс" },
-        { name:"Жим ногами", sets:"3×8", tip:"Доп нагрузка после основного движения" },
-        { name:"Сгибание ног лёжа", sets:"3×10", tip:"Бицепс бедра" },
-        { name:"Подъёмы на икры", sets:"4×12", tip:"Полная амплитуда" },
-      ]},
-      { day: "День 2 — Жим (80-90% от макс)", exercises: [
-        { name:"Жим штанги лёжа", sets:"5×5", tip:"Отдых 3-4 мин между подходами" },
-        { name:"Жим стоя (ОХП)", sets:"4×5", tip:"Базовое движение для плеч" },
-        { name:"Жим гантелей лёжа", sets:"3×8", tip:"Вспомогательная работа" },
-        { name:"Отжимания на брусьях", sets:"3×8", tip:"С отягощением если нужно" },
-        { name:"Трицепс на блоке", sets:"3×12", tip:"Изолирующее движение" },
-      ]},
-      { day: "День 3 — Тяга (80-90% от макс)", exercises: [
-        { name:"Становая тяга", sets:"5×3", tip:"Главное упражнение сессии" },
-        { name:"Подтягивания с весом", sets:"4×5", tip:"Добавь 5-10 кг на пояс" },
-        { name:"Тяга штанги в наклоне", sets:"4×6", tip:"Строгая техника, нет рывков" },
-        { name:"Тяга гантели одной рукой", sets:"3×8", tip:"Фиксируй спину на скамье" },
-        { name:"Подъём штанги на бицепс", sets:"3×8", tip:"Чистое движение без раскачки" },
-      ]},
-    ]
-  },
+  // (программы "Кардио/выносливость" и "Силовая" удалены по требованию)
   fullbody: {
     name: "⚡ Фулл Боди (3 дня/нед)",
     desc: "Всё тело за одну тренировку. Идеально для новичков и при ограниченном времени.",
@@ -1447,7 +1073,6 @@ function loadMainPageData() {
       </div>`).join('');
   }
 
-  changeBackground('home');
 }
 
 // === МОДАЛ: Полный рацион 30 дней ===
@@ -1562,61 +1187,7 @@ function showAllExercises() {
 }
 
 // ============================================================
-// 13. МОДАЛЬНОЕ ОКНО АВТОРИЗАЦИИ
-// ============================================================
-
-// ============================================================
-// 14. ИНИЦИАЛИЗАЦИЯ И СОБЫТИЯ
-// ============================================================
-
-// ============================================================
-// 15. РОТАЦИЯ ЧИПОВ G-BOT (не повторяются)
-// ============================================================
-
-const ALL_CHIPS = [
-  { label: "🍗 200г курицы", text: "200 г курицы" },
-  { label: "🥚 3 яйца", text: "3 яйца" },
-  { label: "🥛 150г творога", text: "150 г творога" },
-  { label: "🍚 100г риса", text: "100 г риса" },
-  { label: "🐟 150г лосося", text: "150 г лосося" },
-  { label: "🍌 1 банан", text: "1 банан" },
-  { label: "🥣 80г овсянки", text: "80 г овсянки" },
-  { label: "🍳 Рецепты с курицей", text: "рецепт с курицей и рисом" },
-  { label: "🥗 Рецепты с творогом", text: "рецепт с творогом" },
-  { label: "🎥 Техника приседаний", text: "техника приседаний" },
-  { label: "🎥 Техника жима", text: "техника жима лёжа" },
-  { label: "📊 Моя норма", text: "моя норма калорий" },
-  { label: "📈 Мой прогресс", text: "статистика за неделю" },
-  { label: "📚 Что такое БЖУ", text: "что такое БЖУ" },
-  { label: "💧 Норма воды", text: "сколько воды пить" },
-  { label: "💪 Мотивация", text: "мотивация" },
-  { label: "🔥 Как похудеть", text: "как правильно похудеть" },
-  { label: "💪 Как набрать массу", text: "как набрать мышечную массу" },
-];
-
-let lastChipIndices = [];
-
-function renderCommandChips() {
-  const container = document.getElementById("commandChips");
-  if (!container) return;
-  // Берём 8 чипов, исключая недавно показанные
-  const available = ALL_CHIPS.map((c, i) => i).filter(i => !lastChipIndices.includes(i));
-  const shuffled = available.sort(() => Math.random() - 0.5).slice(0, 8);
-  lastChipIndices = shuffled;
-  container.innerHTML = shuffled.map(i => {
-    const chip = ALL_CHIPS[i];
-    return `<div class="command-chip" onclick="setExampleAndRefresh('${chip.text}')">${chip.label}</div>`;
-  }).join('');
-}
-
-function setExampleAndRefresh(text) {
-  setExample(text);
-  // Обновляем чипы чтобы не повторялись
-  setTimeout(renderCommandChips, 300);
-}
-
-// ============================================================
-// 16. ГОТОВЫЕ ВАРИАНТЫ РАЦИОНОВ ПО ПРИЁМАМ ПИЩИ
+//  13. ГОТОВЫЕ ВАРИАНТЫ РАЦИОНОВ ПО ПРИЁМАМ ПИЩИ
 // ============================================================
 
 const DAILY_MEAL_PLANS = {
@@ -1754,140 +1325,291 @@ function addMealPlanToRation(mealType, idx) {
 
 document.addEventListener("DOMContentLoaded", () => {
   loadMainPageData();
-  renderSidebarImages();
-  renderCommandChips();
-  const chatInput = document.getElementById("chatInput");
-  if (chatInput) chatInput.addEventListener("keypress", (e) => { if (e.key === "Enter") sendMessage(); });
   const dateInput = document.getElementById("mealDate");
   if (dateInput) dateInput.addEventListener("change", () => { loadTodayMeals(); });
 });
 
- 
-
-
-
 // ============================================================
-// 17. ВЕРИФИКАЦИЯ EMAIL
+//  14. АВТОРИЗАЦИЯ (МОДАЛЬНОЕ ОКНО) — БЕЗ ВЕРИФИКАЦИИ КОДОМ
 // ============================================================
-
-async function sendVerificationCode() {
-  const email = document.getElementById("modalEmail").value;
-  if (!email) {
-    alert("Введите email сначала");
-    return;
-  }
-  
-  // ПОКАЗЫВАЕМ ПОЛЕ МГНОВЕННО (ДО ОТПРАВКИ ЗАПРОСА)
-  const group = document.getElementById("verificationGroup");
-  if (group) {
-    group.style.display = "block";
-    group.style.marginBottom = "14px";
-    console.log("✅ Поле для кода показано");
-  } else {
-    console.error("❌ verificationGroup не найдена!");
-  }
-  
-  // Отправляем запрос фоном
-  try {
-    const res = await fetch("http://localhost:3001/send-verification", {
-      method: "POST",
-      headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({ email })
-    });
-    const data = await res.json();
-    if (data.error) {
-      alert(data.error);
-    } else {
-      console.log("✅ Код отправлен в терминал сервера");
-    }
-  } catch(e) {
-    console.error("❌ Ошибка:", e);
-    alert("Ошибка подключения к серверу. Запущен ли сервер?");
-  }
-}
 
 async function registerFromModal() {
-  const email = document.getElementById("modalEmail").value;
+  const email    = document.getElementById("modalEmail").value.trim();
   const password = document.getElementById("modalPassword").value;
-  const code = document.getElementById("verificationCode").value;
-  
-  if (!email) {
-    alert("Введите email");
-    return;
-  }
-  if (!password) {
-    alert("Введите пароль");
-    return;
-  }
-  if (!code) {
-    alert("Введите код из письма. Нажмите 'Отправить код' сначала");
-    return;
-  }
-  
+  const nickname = document.getElementById("modalNickname")?.value.trim() || "";
+  const tag      = document.getElementById("modalTag")?.value.trim()      || "";
+  const role     = document.getElementById("modalRole")?.value             || "student";
+
+  if (!email)    { alert("Введите email"); return; }
+  if (!password) { alert("Введите пароль"); return; }
+
   try {
     const res = await fetch("http://localhost:3001/register", {
       method: "POST",
-      headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({ email, password, verificationCode: code })
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password, nickname, tag, role })
     });
-    
     const data = await res.json();
-    if (data.error) {
-      alert(data.error);
-    } else {
-      alert("✅ Регистрация успешна!");
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("userId", data.userId);
-      closeAuthModal();
-      showApp();
-      loadUserNorm();
-      loadTodayMeals();
-      renderProductsGrid();
-    }
-  } catch(e) {
-    alert("Ошибка подключения к серверу");
-  }
-}
+    if (data.error) { alert(data.error); return; }
 
-async function loginFromModal() {
-  const email = document.getElementById("modalEmail").value;
-  const password = document.getElementById("modalPassword").value;
-  
-  try {
-    const res = await fetch("http://localhost:3001/login", {
-      method: "POST",
-      headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({ email, password })
-    });
-    
-    const data = await res.json();
-    if (data.error) {
-      alert(data.error);
-      return;
-    }
+    localStorage.setItem("token",    data.token);
+    localStorage.setItem("userId",   data.userId);
+    localStorage.setItem("role",     data.role || "student");
+    if (nickname) localStorage.setItem("nickname", nickname);
+
     token = data.token;
     userId = data.userId;
-    localStorage.setItem("token", token);
-    localStorage.setItem("userId", userId);
+
     closeAuthModal();
     showApp();
     loadUserNorm();
     loadTodayMeals();
     renderProductsGrid();
-  } catch(e) {
+  } catch {
     alert("Ошибка подключения к серверу");
   }
 }
-function showAuthModal() {
-  const modal = document.getElementById('authModal');
-  if (modal) {
-    modal.classList.remove('hidden');
+
+async function loginFromModal() {
+  const email    = document.getElementById("modalEmail").value.trim();
+  const password = document.getElementById("modalPassword").value;
+
+  if (!email)    { alert("Введите email"); return; }
+  if (!password) { alert("Введите пароль"); return; }
+
+  try {
+    const res = await fetch("http://localhost:3001/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password })
+    });
+    const data = await res.json();
+    if (data.error) { alert(data.error); return; }
+
+    token  = data.token;
+    userId = data.userId;
+    localStorage.setItem("token",  token);
+    localStorage.setItem("userId", userId);
+    localStorage.setItem("role",   data.role || "student");
+    if (data.nickname) localStorage.setItem("nickname", data.nickname);
+
+    closeAuthModal();
+    showApp();
+    loadUserNorm();
+    loadTodayMeals();
+    renderProductsGrid();
+  } catch {
+    alert("Ошибка подключения к серверу");
   }
 }
 
-function closeAuthModal() {
-  const modal = document.getElementById('authModal');
-  if (modal) {
-    modal.classList.add('hidden');
+function showAuthModal()  { document.getElementById('authModal')?.classList.remove('hidden'); }
+function closeAuthModal() { document.getElementById('authModal')?.classList.add('hidden');    }
+
+async function forgotPassword() {
+  const email = prompt("Введите email для восстановления пароля:");
+  if (!email) return;
+  const res = await fetch("http://localhost:3001/forgot-password", {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email })
+  });
+  const data = await res.json();
+  if (data.error) { alert(data.error); return; }
+  const code = prompt("Код отправлен в терминал сервера. Введите его:");
+  if (!code) return;
+  const newPassword = prompt("Новый пароль:");
+  if (!newPassword) return;
+  const res2 = await fetch("http://localhost:3001/reset-password", {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, code, newPassword })
+  });
+  const data2 = await res2.json();
+  alert(data2.error || data2.message);
+}
+
+// ============================================================
+//  15. ЗДОРОВЬЕ: АЛЛЕРГИИ И ТРАВМЫ (добавляются в любой момент)
+// ============================================================
+
+async function loadHealth() {
+  if (!userId) return;
+  const res = await fetch(`http://localhost:3001/health/${userId}`);
+  const data = await res.json();
+  renderTagList('allergyList', data.allergies || [], 'allergy');
+  renderTagList('injuryList',  data.injuries  || [], 'injury');
+}
+
+function renderTagList(containerId, items, kind) {
+  const ul = document.getElementById(containerId);
+  if (!ul) return;
+  if (!items.length) {
+    ul.innerHTML = `<li class="tag-empty">Пока ничего не добавлено</li>`;
+    return;
   }
+  ul.innerHTML = items.map(it => `
+    <li class="tag-chip">
+      <span>${it.name}</span>
+      <button class="tag-remove" onclick="removeHealthItem('${kind}', ${it.id})" aria-label="Удалить">✕</button>
+    </li>
+  `).join('');
+}
+
+async function addAllergy() {
+  const input = document.getElementById('allergyInput');
+  const name = input.value.trim();
+  if (!name) return;
+  await fetch(`http://localhost:3001/health/${userId}/allergy`, {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name })
+  });
+  input.value = "";
+  loadHealth();
+}
+
+async function addInjury() {
+  const input = document.getElementById('injuryInput');
+  const name = input.value.trim();
+  if (!name) return;
+  await fetch(`http://localhost:3001/health/${userId}/injury`, {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name })
+  });
+  input.value = "";
+  loadHealth();
+}
+
+async function removeHealthItem(kind, id) {
+  await fetch(`http://localhost:3001/health/${userId}/${kind}/${id}`, { method: "DELETE" });
+  loadHealth();
+}
+
+// ============================================================
+//  16. ЭКСПОРТ ПРОГРЕССА В CSV И EXCEL
+// ============================================================
+
+async function fetchReportRows() {
+  const startDate = document.getElementById("startDate")?.value;
+  const endDate   = document.getElementById("endDate")?.value;
+  let url = `http://localhost:3001/report/${userId}`;
+  if (startDate && endDate) url += `?startDate=${startDate}&endDate=${endDate}`;
+  const res = await fetch(url);
+  return await res.json();
+}
+
+function buildReportTable(rows) {
+  const header = ["Дата", "Белки (г)", "Жиры (г)", "Углеводы (г)", "Калории (ккал)"];
+  const data = rows.map(r => {
+    const kcal = Math.round((r.protein || 0) * 4 + (r.fat || 0) * 9 + (r.carbs || 0) * 4);
+    return [r.date, Math.round(r.protein), Math.round(r.fat), Math.round(r.carbs), kcal];
+  });
+  return { header, data };
+}
+
+async function exportReportCSV() {
+  const rows = await fetchReportRows();
+  if (!rows.length) { alert("Нет данных за выбранный период"); return; }
+  const { header, data } = buildReportTable(rows);
+  const csv = [header, ...data]
+    .map(row => row.map(c => `"${String(c).replace(/"/g, '""')}"`).join(";"))
+    .join("\r\n");
+  const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8;" });
+  downloadBlob(blob, `progress_${Date.now()}.csv`);
+}
+
+async function exportReportXLSX() {
+  if (typeof XLSX === "undefined") { alert("Библиотека Excel не загружена"); return; }
+  const rows = await fetchReportRows();
+  if (!rows.length) { alert("Нет данных за выбранный период"); return; }
+  const { header, data } = buildReportTable(rows);
+  const ws = XLSX.utils.aoa_to_sheet([header, ...data]);
+  ws["!cols"] = [{ wch: 14 }, { wch: 12 }, { wch: 12 }, { wch: 14 }, { wch: 16 }];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Прогресс");
+  XLSX.writeFile(wb, `progress_${Date.now()}.xlsx`);
+}
+
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// ============================================================
+//  17. КАБИНЕТ ТРЕНЕРА: ПОИСК И ЭФФЕКТИВНОСТЬ ГРУППЫ
+// ============================================================
+
+let searchDebounce = null;
+
+function searchStudents() {
+  clearTimeout(searchDebounce);
+  searchDebounce = setTimeout(async () => {
+    const q = document.getElementById('searchInput').value.trim();
+    const container = document.getElementById('searchResults');
+    if (!q) { container.innerHTML = ''; return; }
+    const res = await fetch(`http://localhost:3001/students/search?q=${encodeURIComponent(q)}`);
+    const rows = await res.json();
+    if (!rows.length) {
+      container.innerHTML = `<li class="tag-empty">Ничего не найдено</li>`;
+      return;
+    }
+    container.innerHTML = rows.map(s => `
+      <li class="search-result">
+        <div class="search-info">
+          <strong>${s.nickname || s.email}</strong>
+          ${s.tag ? `<span class="search-tag">${s.tag}</span>` : ''}
+          <small>${s.email}</small>
+        </div>
+        <button class="btn-secondary" onclick="addStudentToGroup(${s.id})">＋ В группу</button>
+      </li>
+    `).join('');
+  }, 200);
+}
+
+async function addStudentToGroup(studentId) {
+  await fetch(`http://localhost:3001/group/${userId}/add`, {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ studentId })
+  });
+  document.getElementById('searchInput').value = '';
+  document.getElementById('searchResults').innerHTML = '';
+  loadCoachGroup();
+}
+
+async function removeStudentFromGroup(studentId) {
+  await fetch(`http://localhost:3001/group/${userId}/remove/${studentId}`, { method: "DELETE" });
+  loadCoachGroup();
+}
+
+async function loadCoachGroup() {
+  if (!userId) return;
+  const res = await fetch(`http://localhost:3001/group/${userId}`);
+  const data = await res.json();
+  document.getElementById('groupPercent').textContent = `${data.groupPercent}%`;
+  document.getElementById('groupCount').textContent   = data.students.length;
+
+  const list = document.getElementById('groupList');
+  if (!data.students.length) {
+    list.innerHTML = `<li class="tag-empty">В группе пока нет учеников — найдите по никнейму или тэгу</li>`;
+    return;
+  }
+  list.innerHTML = data.students.map(s => {
+    const colorClass = s.percent >= 80 ? 'eff-good' : s.percent >= 50 ? 'eff-mid' : 'eff-low';
+    return `
+      <li class="student-row">
+        <div class="student-info">
+          <strong>${s.nickname || s.email}</strong>
+          ${s.tag ? `<span class="search-tag">${s.tag}</span>` : ''}
+          <small>${s.email}</small>
+        </div>
+        <div class="student-stat ${colorClass}">
+          <span class="kpi-value">${s.percent}%</span>
+          <small>${s.daysInNorm}/${s.totalDays} дней</small>
+        </div>
+        <button class="btn-secondary" onclick="removeStudentFromGroup(${s.id})">Убрать</button>
+      </li>
+    `;
+  }).join('');
 }

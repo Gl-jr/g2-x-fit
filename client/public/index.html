@@ -7,10 +7,14 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
+  <!-- SheetJS для экспорта в Excel -->
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 </head>
 <body>
 
-<!-- ====== ГЛАВНАЯ СТРАНИЦА ====== -->
+<!-- ============================================================
+     ГЛАВНАЯ СТРАНИЦА (лендинг)
+     ============================================================ -->
 <div id="mainPage" class="main-page">
   <div class="header-main">
     <div class="logo-main">
@@ -23,21 +27,17 @@
     <h1 class="hero-title">G² x FIT</h1>
     <p class="hero-subtitle">Интеллектуальный трекинг питания и тренировок</p>
     <div class="hero-badges">
-      <span class="badge">AI анализ рациона</span>
-      <span class="badge">Персональные рекомендации</span>
-      <span class="badge">Дневник прогресса</span>
+      <span class="badge">Калькулятор БЖУ</span>
+      <span class="badge">Дневник питания</span>
+      <span class="badge">Прогресс и экспорт</span>
     </div>
   </div>
 
   <div class="main-grid">
-    <!-- Блок новостей -->
-    <div class="main-card">
+    <!-- Новости индустрии -->
+    <div class="main-card glass-tilt">
       <div class="card-header">
-        <div class="card-icon">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M4 4h16v16H4z M8 8h8M8 12h6M8 16h4"/>
-          </svg>
-        </div>
+        <div class="card-icon">📰</div>
         <h2>Новости индустрии</h2>
       </div>
       <div class="news-list" id="newsList"></div>
@@ -48,44 +48,30 @@
       </div>
     </div>
 
-    <!-- Блок готовых рационов -->
-    <div class="main-card">
+    <!-- Программы питания -->
+    <div class="main-card glass-tilt">
       <div class="card-header">
-        <div class="card-icon">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
-          </svg>
-        </div>
+        <div class="card-icon">🥗</div>
         <h2>Готовые программы питания</h2>
       </div>
       <div class="meal-plans" id="mealPlans"></div>
       <button class="btn-more" onclick="showAllMealPlans()">Все программы</button>
     </div>
 
-    <!-- Блок видов тренировок -->
-    <div class="main-card">
+    <!-- Программы тренировок -->
+    <div class="main-card glass-tilt">
       <div class="card-header">
-        <div class="card-icon">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 2L15 9H22L16 14L19 21L12 17L5 21L8 14L2 9H9L12 2Z"/>
-          </svg>
-        </div>
+        <div class="card-icon">🏋️</div>
         <h2>Программы тренировок</h2>
       </div>
       <div class="exercises-list" id="workoutsList"></div>
       <button class="btn-more" onclick="showWorkoutPlan('fullbody')">Все программы</button>
     </div>
 
-    <!-- Блок правильной техники -->
-    <div class="main-card">
+    <!-- Видеоуроки -->
+    <div class="main-card glass-tilt">
       <div class="card-header">
-        <div class="card-icon">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="3"/>
-            <path d="M22 12c0 5.52-4.48 10-10 10S2 17.52 2 12 6.48 2 12 2s10 4.48 10 10z"/>
-            <path d="M12 6v6l4 2"/>
-          </svg>
-        </div>
+        <div class="card-icon">🎬</div>
         <h2>Видеоуроки по технике</h2>
       </div>
       <div class="exercises-list" id="exercisesList"></div>
@@ -94,66 +80,68 @@
   </div>
 
   <div class="footer-slogans">
-    <span>G² x FIT</span>
-    <span>•</span>
-    <span>Интеллектуальный трекинг</span>
-    <span>•</span>
+    <span>G² x FIT</span><span>•</span>
+    <span>Интеллектуальный трекинг</span><span>•</span>
     <span>Персональные рекомендации</span>
   </div>
 </div>
 
-<!-- ====== МОДАЛЬНОЕ ОКНО АВТОРИЗАЦИИ ====== -->
+<!-- ============================================================
+     МОДАЛЬНОЕ ОКНО АВТОРИЗАЦИИ
+     Все поля видны сразу. Вход — email + пароль; Регистрация —
+     дополнительно никнейм / тэг / роль.
+     ============================================================ -->
 <div id="authModal" class="modal hidden">
-  <div class="modal-content">
+  <div class="modal-content glass-tilt">
     <div class="modal-header">
-      <h3>Авторизация</h3>
+      <h3>Вход или регистрация</h3>
       <button class="modal-close" onclick="closeAuthModal()">✕</button>
     </div>
+
     <div class="auth-card-modal">
-      <div class="input-group">
-        <span class="input-icon">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-            <polyline points="22,6 12,13 2,6"/>
-          </svg>
-        </span>
-        <input id="modalEmail" placeholder="Электронная почта" type="email">
+
+      <div class="auth-section">
+        <span class="auth-section-label">Основные данные</span>
+        <div class="input-group">
+          <input id="modalEmail" placeholder="Электронная почта" type="email" autocomplete="email">
+        </div>
+        <div class="input-group">
+          <input id="modalPassword" type="password" placeholder="Пароль" autocomplete="current-password">
+        </div>
       </div>
-      <div class="input-group">
-        <span class="input-icon">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-          </svg>
-        </span>
-        <input id="modalPassword" type="password" placeholder="Пароль">
+
+      <div class="auth-section">
+        <span class="auth-section-label">Для регистрации</span>
+        <div class="input-group">
+          <input id="modalNickname" placeholder="Никнейм (виден тренеру)" type="text" autocomplete="nickname">
+        </div>
+        <div class="input-group">
+          <input id="modalTag" placeholder="Тэг группы, напр. #group-a" type="text">
+        </div>
+        <div class="select-wrapper">
+          <select id="modalRole">
+            <option value="student">Я ученик</option>
+            <option value="coach">Я тренер</option>
+          </select>
+        </div>
       </div>
-      
-      <div class="input-group" id="verificationGroup" style="display: none;">
-        <span class="input-icon">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="3"/>
-            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-          </svg>
-        </span>
-        <input id="verificationCode" placeholder="Код подтверждения" type="text" maxlength="4">
-      </div>
-      
-      <button class="btn-secondary" onclick="sendVerificationCode()" style="margin-bottom: 10px; width: 100%;">Отправить код</button>
-      
+
       <div class="auth-buttons">
-        <button class="btn-primary" onclick="registerFromModal()">Регистрация</button>
-        <button class="btn-secondary" onclick="loginFromModal()">Вход</button>
+        <button id="btnLogin"    class="btn-primary"   onclick="loginFromModal()">Войти</button>
+        <button id="btnRegister" class="btn-secondary" onclick="registerFromModal()">Зарегистрироваться</button>
       </div>
-      
-      <button class="btn-link" onclick="forgotPassword()" style="background:none; border:none; color:var(--accent); margin-top: 15px; width: 100%; cursor: pointer;">Восстановить пароль</button>
+
+      <button class="btn-link" onclick="forgotPassword()">Восстановить пароль</button>
     </div>
   </div>
 </div>
 
-<!-- ====== ОСНОВНОЕ ПРИЛОЖЕНИЕ ====== -->
+<!-- ============================================================
+     ОСНОВНОЕ ПРИЛОЖЕНИЕ
+     ============================================================ -->
 <div id="appPage" class="hidden">
 
+  <!-- Сайдбар -->
   <div class="sidebar">
     <div class="sidebar-logo">
       <div class="auth-logo">
@@ -163,53 +151,12 @@
     </div>
 
     <nav class="sidebar-nav">
-      <a class="nav-item active" onclick="showSection('calcCard')">
-        <span class="nav-icon">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="10"/>
-            <path d="M12 6v6l4 2"/>
-          </svg>
-        </span>
-        <span>Калькулятор</span>
-      </a>
-      <a class="nav-item" onclick="showSection('mealsCard')">
-        <span class="nav-icon">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M18 8L22 12L18 16"/>
-            <path d="M2 12h16"/>
-            <path d="M6 4L2 8L6 12"/>
-          </svg>
-        </span>
-        <span>Дневник питания</span>
-      </a>
-      <a class="nav-item" onclick="showSection('reportCard')">
-        <span class="nav-icon">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M21 12v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h6"/>
-            <polyline points="15 3 21 3 21 9"/>
-            <line x1="10" y1="14" x2="21" y2="3"/>
-          </svg>
-        </span>
-        <span>Прогресс</span>
-      </a>
-      <a class="nav-item" onclick="showSection('chatCard')">
-        <span class="nav-icon">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-          </svg>
-        </span>
-        <span>AI Ассистент</span>
-      </a>
-      <a class="nav-item" onclick="showSection('recipesCard')">
-        <span class="nav-icon">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M3 6h18v2H3zM3 12h18v2H3zM3 18h18v2H3z"/>
-            <circle cx="8" cy="8" r="2"/>
-            <circle cx="16" cy="14" r="2"/>
-          </svg>
-        </span>
-        <span>Рецепты</span>
-      </a>
+      <a class="nav-item active" data-section="calcCard"    onclick="showSection('calcCard')">    <span class="nav-icon">⚖️</span><span>Калькулятор</span></a>
+      <a class="nav-item"        data-section="mealsCard"   onclick="showSection('mealsCard')">   <span class="nav-icon">🍽️</span><span>Дневник питания</span></a>
+      <a class="nav-item"        data-section="reportCard"  onclick="showSection('reportCard')">  <span class="nav-icon">📈</span><span>Прогресс</span></a>
+      <a class="nav-item"        data-section="healthCard"  onclick="showSection('healthCard')">  <span class="nav-icon">❤️</span><span>Здоровье</span></a>
+      <a class="nav-item nav-coach" data-section="coachCard" onclick="showSection('coachCard')" style="display:none;"><span class="nav-icon">👥</span><span>Группа</span></a>
+      <a class="nav-item"        data-section="recipesCard" onclick="showSection('recipesCard')"> <span class="nav-icon">📖</span><span>Рецепты</span></a>
     </nav>
 
     <div class="sidebar-motivation">
@@ -218,6 +165,7 @@
     </div>
   </div>
 
+  <!-- Основной контент -->
   <div class="main-content">
 
     <div class="topbar">
@@ -227,44 +175,15 @@
 
     <div class="cards-grid">
 
-      <!-- КАЛЬКУЛЯТОР БЖУ -->
-      <div class="card" id="calcCard">
+      <!-- КАЛЬКУЛЯТОР НОРМЫ -->
+      <div class="card glass-tilt" id="calcCard">
         <div class="card-header">
-          <div class="card-icon">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10"/>
-              <path d="M12 6v6l4 2"/>
-            </svg>
-          </div>
+          <div class="card-icon">⚖️</div>
           <h2>Калькулятор нормы</h2>
         </div>
-        
-        <div class="input-group">
-          <span class="input-icon">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10"/>
-              <path d="M12 6v6l4 2"/>
-            </svg>
-          </span>
-          <input id="weight" placeholder="Вес (кг)" type="number">
-        </div>
-        <div class="input-group">
-          <span class="input-icon">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M2 16.5L12 2l10 14.5M2 16.5L12 22l10-5.5"/>
-            </svg>
-          </span>
-          <input id="height" placeholder="Рост (см)" type="number">
-        </div>
-        <div class="input-group">
-          <span class="input-icon">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10"/>
-              <path d="M12 8v4l3 3"/>
-            </svg>
-          </span>
-          <input id="age" placeholder="Возраст" type="number">
-        </div>
+        <div class="input-group"><input id="weight" placeholder="Вес (кг)" type="number"></div>
+        <div class="input-group"><input id="height" placeholder="Рост (см)" type="number"></div>
+        <div class="input-group"><input id="age"    placeholder="Возраст"   type="number"></div>
         <div class="select-wrapper">
           <select id="goal">
             <option value="maintain">Поддержание веса</option>
@@ -277,39 +196,19 @@
       </div>
 
       <!-- ДНЕВНИК ПИТАНИЯ -->
-      <div class="card" id="mealsCard" style="display: none;">
+      <div class="card glass-tilt" id="mealsCard" style="display: none;">
         <div class="card-header">
-          <div class="card-icon">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M18 8L22 12L18 16"/>
-              <path d="M2 12h16"/>
-              <path d="M6 4L2 8L6 12"/>
-            </svg>
-          </div>
+          <div class="card-icon">🍽️</div>
           <h2>Дневник питания</h2>
         </div>
-
-        <div class="input-group">
-          <span class="input-icon">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-              <line x1="16" y1="2" x2="16" y2="6"/>
-              <line x1="8" y1="2" x2="8" y2="6"/>
-              <line x1="3" y1="10" x2="21" y2="10"/>
-            </svg>
-          </span>
-          <input type="date" id="mealDate" value="">
-        </div>
-
+        <div class="input-group"><input type="date" id="mealDate"></div>
         <div class="meal-buttons">
           <button class="btn-meal" onclick="addMeal('breakfast')">Завтрак</button>
           <button class="btn-meal" onclick="addMeal('lunch')">Обед</button>
           <button class="btn-meal" onclick="addMeal('dinner')">Ужин</button>
           <button class="btn-meal" onclick="addMeal('snack')">Перекус</button>
         </div>
-
         <div id="mealsContainer" class="meals-list"></div>
-
         <div class="daily-total">
           <strong>Итого за день</strong>
           <p id="dailyTotal">0 г белков | 0 г жиров | 0 г углеводов | 0 ккал</p>
@@ -317,16 +216,10 @@
         </div>
       </div>
 
-      <!-- ПРОГРЕСС -->
-      <div class="card" id="reportCard" style="display: none;">
+      <!-- ПРОГРЕСС + ЭКСПОРТ -->
+      <div class="card glass-tilt" id="reportCard" style="display: none;">
         <div class="card-header">
-          <div class="card-icon">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M21 12v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h6"/>
-              <polyline points="15 3 21 3 21 9"/>
-              <line x1="10" y1="14" x2="21" y2="3"/>
-            </svg>
-          </div>
+          <div class="card-icon">📈</div>
           <h2>Прогресс</h2>
         </div>
 
@@ -337,94 +230,84 @@
         </div>
 
         <div class="date-range">
-          <div class="input-group">
-            <span class="input-icon">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-                <line x1="16" y1="2" x2="16" y2="6"/>
-                <line x1="8" y1="2" x2="8" y2="6"/>
-                <line x1="3" y1="10" x2="21" y2="10"/>
-              </svg>
-            </span>
-            <input type="date" id="startDate">
-          </div>
-          <div class="input-group">
-            <span class="input-icon">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-                <line x1="16" y1="2" x2="16" y2="6"/>
-                <line x1="8" y1="2" x2="8" y2="6"/>
-                <line x1="3" y1="10" x2="21" y2="10"/>
-              </svg>
-            </span>
-            <input type="date" id="endDate">
-          </div>
+          <div class="input-group"><input type="date" id="startDate"></div>
+          <div class="input-group"><input type="date" id="endDate"></div>
         </div>
 
-        <button class="btn-action btn-show" onclick="loadReport()">Показать отчёт</button>
+        <div class="action-row">
+          <button class="btn-action" onclick="loadReport()">Показать отчёт</button>
+          <button class="btn-secondary" onclick="exportReportCSV()">⤓ CSV</button>
+          <button class="btn-secondary" onclick="exportReportXLSX()">⤓ Excel</button>
+        </div>
 
         <div id="report" class="report-list"></div>
         <div id="stats"></div>
       </div>
 
-      <!-- AI АССИСТЕНТ -->
-      <div class="card" id="chatCard" style="display: none;">
+      <!-- ЗДОРОВЬЕ: аллергии и травмы -->
+      <div class="card glass-tilt" id="healthCard" style="display: none;">
         <div class="card-header">
-          <div class="card-icon">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-            </svg>
-          </div>
-          <h2>AI Ассистент</h2>
-        </div>
-        
-        <div class="gbot-status">
-          <span class="status-dot"></span>
-          <span class="status-text">Доступен</span>
-          <span class="status-version">v2.0</span>
-        </div>
-        
-        <div class="gbot-commands">
-          <div class="commands-title">G-BOT умеет:</div>
-          <div class="commands-grid" id="commandChips"></div>
+          <div class="card-icon">❤️</div>
+          <h2>Здоровье</h2>
         </div>
 
-        <div id="chatMessages" class="chat-messages">
-          <div class="chat-placeholder">
-            Привет, я G-BOT — AI ассистент.<br>
-            Спрашивайте о питании, тренировках и рецептах.
+        <div class="health-block">
+          <h3 class="block-title">Аллергии</h3>
+          <div class="input-row">
+            <div class="input-group" style="flex:1;"><input id="allergyInput" placeholder="Напр. орехи, лактоза" type="text"></div>
+            <button class="btn-secondary" onclick="addAllergy()">＋ Добавить</button>
           </div>
+          <ul class="tag-list" id="allergyList"></ul>
         </div>
 
-        <div class="chat-input-row">
-          <div class="input-group">
-            <span class="input-icon">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-              </svg>
-            </span>
-            <input type="text" id="chatInput" placeholder="Напишите сообщение...">
+        <div class="health-block">
+          <h3 class="block-title">Травмы</h3>
+          <div class="input-row">
+            <div class="input-group" style="flex:1;"><input id="injuryInput" placeholder="Напр. колено, поясница" type="text"></div>
+            <button class="btn-secondary" onclick="addInjury()">＋ Добавить</button>
           </div>
-          <button class="btn-send" onclick="sendMessage()">➤</button>
+          <ul class="tag-list" id="injuryList"></ul>
         </div>
       </div>
 
-      <!-- РЕЦЕПТЫ -->
-      <div class="card" id="recipesCard" style="display: none;">
+      <!-- КАБИНЕТ ТРЕНЕРА: поиск + группа -->
+      <div class="card glass-tilt" id="coachCard" style="display: none;">
         <div class="card-header">
-          <div class="card-icon">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M3 6h18v2H3zM3 12h18v2H3zM3 18h18v2H3z"/>
-              <circle cx="8" cy="8" r="2"/>
-              <circle cx="16" cy="14" r="2"/>
-            </svg>
+          <div class="card-icon">👥</div>
+          <h2>Группа</h2>
+        </div>
+
+        <div class="group-summary">
+          <div class="kpi">
+            <span class="kpi-label">Эффективность группы</span>
+            <span class="kpi-value" id="groupPercent">0%</span>
           </div>
+          <div class="kpi">
+            <span class="kpi-label">Учеников</span>
+            <span class="kpi-value" id="groupCount">0</span>
+          </div>
+        </div>
+
+        <h3 class="block-title">Поиск ученика по никнейму или тэгу</h3>
+        <div class="input-row">
+          <div class="input-group" style="flex:1;"><input id="searchInput" placeholder="Никнейм или #тэг" type="text" oninput="searchStudents()"></div>
+        </div>
+        <ul class="search-results" id="searchResults"></ul>
+
+        <h3 class="block-title">Мои ученики</h3>
+        <ul class="group-list" id="groupList"></ul>
+      </div>
+
+      <!-- РЕЦЕПТЫ -->
+      <div class="card glass-tilt" id="recipesCard" style="display: none;">
+        <div class="card-header">
+          <div class="card-icon">📖</div>
           <h2>Рецепты</h2>
         </div>
 
-        <div style="display:flex; gap:10px; width:100%; margin-bottom:20px;">
-          <button id="tabMealPlan" onclick="switchRecipeTab('mealplan')" style="flex:1; background:var(--accent); color:white; border:none; height:40px; border-radius:10px; font-size:13px; cursor:pointer;">Рацион дня</button>
-          <button id="tabProducts" onclick="switchRecipeTab('products')" style="flex:1; background:rgba(255,255,255,0.05); color:var(--text-secondary); border:1px solid var(--glass-border); height:40px; border-radius:10px; font-size:13px; cursor:pointer;">Подбор по продуктам</button>
+        <div class="recipe-tabs">
+          <button id="tabMealPlan" class="recipe-tab active" onclick="switchRecipeTab('mealplan')">Рацион дня</button>
+          <button id="tabProducts" class="recipe-tab"        onclick="switchRecipeTab('products')">Подбор по продуктам</button>
         </div>
 
         <div id="panelMealPlan">
@@ -442,10 +325,8 @@
     </div>
 
     <div class="footer-slogans-app">
-      <span>G² x FIT</span>
-      <span>•</span>
-      <span>Интеллектуальный трекинг</span>
-      <span>•</span>
+      <span>G² x FIT</span><span>•</span>
+      <span>Интеллектуальный трекинг</span><span>•</span>
       <span>Персональные рекомендации</span>
     </div>
 
@@ -454,123 +335,88 @@
 
 <script src="app.js"></script>
 <script>
-  const titles = {
-    'calcCard': 'Калькулятор',
-    'mealsCard': 'Дневник питания',
-    'reportCard': 'Прогресс',
-    'chatCard': 'AI Ассистент',
-    'recipesCard': 'Рецепты'
+  // ============================================================
+  //  ПЕРЕКЛЮЧЕНИЕ РАЗДЕЛОВ ПРИЛОЖЕНИЯ
+  // ============================================================
+  const SECTION_TITLES = {
+    calcCard:    'Калькулятор',
+    mealsCard:   'Дневник питания',
+    reportCard:  'Прогресс',
+    healthCard:  'Здоровье',
+    coachCard:   'Группа',
+    recipesCard: 'Рецепты'
   };
 
   function showSection(sectionId) {
-    const sections = ['calcCard', 'mealsCard', 'reportCard', 'chatCard', 'recipesCard'];
-    sections.forEach(id => {
+    Object.keys(SECTION_TITLES).forEach(id => {
       const el = document.getElementById(id);
       if (el) el.style.display = 'none';
     });
-    
-    const activeSection = document.getElementById(sectionId);
-    if (activeSection) activeSection.style.display = 'flex';
-    
-    document.getElementById('pageTitle').textContent = titles[sectionId] || 'Главная';
-    
+    const active = document.getElementById(sectionId);
+    if (active) active.style.display = 'flex';
+
+    document.getElementById('pageTitle').textContent = SECTION_TITLES[sectionId] || 'Главная';
+
     document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-    if (event && event.currentTarget) {
-      event.currentTarget.classList.add('active');
-    }
-    
+    const navItem = document.querySelector(`.nav-item[data-section="${sectionId}"]`);
+    if (navItem) navItem.classList.add('active');
+
     if (sectionId === 'recipesCard') {
       setTimeout(() => {
-        renderMealPlanSection();
-        if (typeof renderProductsGrid === 'function') renderProductsGrid();
+        if (typeof renderMealPlanSection === 'function') renderMealPlanSection();
+        if (typeof renderProductsGrid    === 'function') renderProductsGrid();
       }, 50);
     }
+    if (sectionId === 'healthCard'  && typeof loadHealth === 'function')       loadHealth();
+    if (sectionId === 'coachCard'   && typeof loadCoachGroup === 'function')   loadCoachGroup();
   }
 
-  // Генерация календаря
-  function renderCalendar() {
-    const container = document.getElementById('calendarScroll');
-    if (!container) return;
-    
-    const days = ['ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ', 'ВС'];
-    const today = new Date();
-    const currentDay = today.getDay() || 7;
-    const startOfWeek = new Date(today);
-    startOfWeek.setDate(today.getDate() - (currentDay - 1));
-    
-    let html = '<div class="calendar-days">';
-    for (let i = 0; i < 7; i++) {
-      const date = new Date(startOfWeek);
-      date.setDate(startOfWeek.getDate() + i);
-      const dayNum = date.getDate();
-      const isToday = i === (currentDay - 1);
-      const hasWorkout = i % 2 === 0;
-      
-      html += `
-        <div class="calendar-day ${isToday ? 'active' : ''}">
-          <div class="calendar-day-name">${days[i]}</div>
-          <div class="calendar-day-num">${dayNum}</div>
-          ${hasWorkout ? '<div class="calendar-dot"></div>' : ''}
-        </div>
-      `;
-    }
-    html += '</div>';
-    container.innerHTML = html;
-  }
+  // ============================================================
+  //  GLASS-ЭФФЕКТ С ОТСЛЕЖИВАНИЕМ КУРСОРА
+  //  Подсветка следует за указателем, у границ — лёгкий «наклон».
+  //  Используется rAF, чтобы не дёргать стили на каждом mousemove.
+  // ============================================================
+  (() => {
+    let pending = false;
+    let lastEvent = null;
 
-  // Обновление колец
-  function updateRings(percent) {
-    const moveRing = document.querySelector('.ring-move');
-    const exerciseRing = document.querySelector('.ring-exercise');
-    const standRing = document.querySelector('.ring-stand');
-    const percentText = document.querySelector('.rings-svg text');
-    
-    if (moveRing) {
-      const moveDash = 276.46 * (1 - percent / 100);
-      moveRing.style.strokeDashoffset = moveDash;
-    }
-    if (exerciseRing) {
-      const exercisePercent = Math.min(100, percent * 0.8);
-      const exerciseDash = 213.628 * (1 - exercisePercent / 100);
-      exerciseRing.style.strokeDashoffset = exerciseDash;
-    }
-    if (standRing) {
-      const standPercent = Math.min(100, percent * 0.6);
-      const standDash = 150.796 * (1 - standPercent / 100);
-      standRing.style.strokeDashoffset = standDash;
-    }
-    if (percentText) {
-      percentText.textContent = `${Math.round(percent)}%`;
-    }
-  }
+    const onMove = () => {
+      pending = false;
+      if (!lastEvent) return;
+      const e = lastEvent;
+      document.querySelectorAll('.glass-tilt').forEach(card => {
+        const rect = card.getBoundingClientRect();
+        if (rect.width === 0) return;
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        const inside = x >= 0 && y >= 0 && x <= rect.width && y <= rect.height;
+        card.style.setProperty('--mx', `${x}px`);
+        card.style.setProperty('--my', `${y}px`);
+        // нормализованные координаты для лёгкого 3D-наклона
+        const nx = (x / rect.width  - 0.5);
+        const ny = (y / rect.height - 0.5);
+        card.style.setProperty('--rx', `${(-ny * 4).toFixed(2)}deg`);
+        card.style.setProperty('--ry', `${ ( nx * 4).toFixed(2)}deg`);
+        card.classList.toggle('is-hovered', inside);
+      });
+    };
 
-  function updateRingStats(calories, minutes, normPercent) {
-    const caloriesSpan = document.getElementById('caloriesBurned');
-    const minutesSpan = document.getElementById('exerciseMinutes');
-    const normSpan = document.getElementById('normPercent');
-    if (caloriesSpan) caloriesSpan.textContent = calories || 0;
-    if (minutesSpan) minutesSpan.textContent = minutes || 0;
-    if (normSpan) normSpan.textContent = normPercent || 0;
-  }
+    document.addEventListener('mousemove', (e) => {
+      lastEvent = e;
+      if (!pending) {
+        pending = true;
+        requestAnimationFrame(onMove);
+      }
+    }, { passive: true });
+  })();
 
-  const today = new Date().toISOString().split('T')[0];
-  const dateInput = document.getElementById('mealDate');
-  if (dateInput) {
-    dateInput.value = today;
-  }
-  
-  function setExample(text) {
-    const input = document.getElementById("chatInput");
-    if (input) {
-      input.value = text;
-      input.focus();
-    }
-  }
-  
+  // ============================================================
+  //  ИНИЦИАЛИЗАЦИЯ ПРИ ЗАГРУЗКЕ
+  // ============================================================
   document.addEventListener('DOMContentLoaded', () => {
-    renderCalendar();
-    updateRings(75);
-    updateRingStats(375, 22, 75);
+    const today = new Date().toISOString().split('T')[0];
+    const dateInput = document.getElementById('mealDate');
+    if (dateInput) dateInput.value = today;
   });
 </script>
 </body>
