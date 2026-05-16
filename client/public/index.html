@@ -161,16 +161,46 @@
     </div>
 
     <nav class="sidebar-nav">
-      <a class="nav-item active"     data-section="calcCard"     onclick="showSection('calcCard')">     <span class="nav-icon">⚖️</span><span>Калькулятор</span></a>
-      <a class="nav-item"            data-section="mealsCard"    onclick="showSection('mealsCard')">    <span class="nav-icon">🍽️</span><span>Дневник питания</span></a>
-      <a class="nav-item"            data-section="reportCard"   onclick="showSection('reportCard')">   <span class="nav-icon">📈</span><span>Прогресс</span></a>
-      <a class="nav-item nav-coach"  data-section="coachCard"    onclick="showSection('coachCard')"    style="display:none;"><span class="nav-icon">👥</span><span>Группа</span></a>
-      <a class="nav-item nav-coach"  data-section="weightCard"   onclick="showSection('weightCard')"   style="display:none;"><span class="nav-icon">📊</span><span>Вес учеников</span></a>
-      <a class="nav-item nav-coach"  data-section="assignCard"   onclick="showSection('assignCard')"   style="display:none;"><span class="nav-icon">📝</span><span>Назначения</span></a>
-      <a class="nav-item"            data-section="workoutTrackerCard" onclick="showSection('workoutTrackerCard')"><span class="nav-icon">🏋️</span><span>Тренировки</span></a>
-      <a class="nav-item"            data-section="recipesCard"  onclick="showSection('recipesCard')">  <span class="nav-icon">📖</span><span>Рецепты</span></a>
-      <a class="nav-item"            data-section="calendarCard" onclick="showSection('calendarCard')"> <span class="nav-icon">📅</span><span>Календарь</span></a>
-      <a class="nav-item"            data-section="healthCard"   onclick="showSection('healthCard')">   <span class="nav-icon">❤️</span><span>Здоровье</span></a>
+      <a class="nav-item active"    data-section="calcCard"           onclick="showSection('calcCard')">
+        <span class="nav-icon"><svg viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="12" y2="14"/></svg></span>
+        <span>Калькулятор</span>
+      </a>
+      <a class="nav-item"           data-section="mealsCard"          onclick="showSection('mealsCard')">
+        <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg></span>
+        <span>Дневник питания</span>
+      </a>
+      <a class="nav-item"           data-section="reportCard"         onclick="showSection('reportCard')">
+        <span class="nav-icon"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></span>
+        <span>Прогресс</span>
+      </a>
+      <a class="nav-item nav-coach" data-section="coachCard"          onclick="showSection('coachCard')"           style="display:none;">
+        <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+        <span>Группа</span>
+      </a>
+      <a class="nav-item nav-coach" data-section="weightCard"         onclick="showSection('weightCard')"          style="display:none;">
+        <span class="nav-icon"><svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span>
+        <span>Вес учеников</span>
+      </a>
+      <a class="nav-item nav-coach" data-section="assignCard"         onclick="showSection('assignCard')"          style="display:none;">
+        <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></span>
+        <span>Назначения</span>
+      </a>
+      <a class="nav-item"           data-section="workoutTrackerCard" onclick="showSection('workoutTrackerCard')">
+        <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M6.5 6.5h11"/><path d="M17.5 17.5h-11"/><path d="M3 9.5V14.5"/><path d="M21 9.5V14.5"/><line x1="3" y1="12" x2="6.5" y2="12"/><line x1="17.5" y1="12" x2="21" y2="12"/></svg></span>
+        <span>Тренировки</span>
+      </a>
+      <a class="nav-item"           data-section="recipesCard"        onclick="showSection('recipesCard')">
+        <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span>
+        <span>Рецепты</span>
+      </a>
+      <a class="nav-item"           data-section="calendarCard"       onclick="showSection('calendarCard')">
+        <span class="nav-icon"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span>
+        <span>Календарь</span>
+      </a>
+      <a class="nav-item"           data-section="healthCard"         onclick="showSection('healthCard')">
+        <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></span>
+        <span>Здоровье</span>
+      </a>
     </nav>
 
     <div class="sidebar-motivation">
@@ -235,6 +265,13 @@
         <div class="card-header">
           <div class="card-icon">📈</div>
           <h2>Прогресс</h2>
+        </div>
+
+        <!-- Запись своего веса -->
+        <div class="input-row" style="margin-bottom:8px;">
+          <div class="input-group" style="flex:1;"><input type="date" id="myWeightDate"></div>
+          <div class="input-group" style="width:110px;"><input type="number" id="myWeightKg" placeholder="кг" step="0.1" min="20" max="300"></div>
+          <button class="btn-secondary" id="btnLogWeight" onclick="logMyWeight()" style="height:52px;padding:0 16px;white-space:nowrap;">Записать вес</button>
         </div>
 
         <div class="filter-buttons">
@@ -401,16 +438,29 @@
         </div>
       </div>
 
-      <!-- ДНЕВНИК ТРЕНИРОВОК: упражнения по группам мышц + подходы -->
+      <!-- ДНЕВНИК ТРЕНИРОВОК: упражнения по группам мышц + подходы (SQLite) -->
       <div class="card glass-tilt" id="workoutTrackerCard" style="display: none;">
         <div class="card-header">
-          <div class="card-icon">🏋️</div>
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6.5h11"/><path d="M17.5 17.5h-11"/><path d="M3 9.5V14.5"/><path d="M21 9.5V14.5"/><line x1="3" y1="12" x2="6.5" y2="12"/><line x1="17.5" y1="12" x2="21" y2="12"/></svg>
+          </div>
           <h2>Дневник тренировок</h2>
         </div>
+
+        <!-- Дата тренировки -->
+        <div class="input-row" style="margin-bottom:16px;">
+          <div class="input-group" style="flex:1;">
+            <input type="date" id="workoutDate" onchange="onWorkoutDateChange()">
+          </div>
+          <button class="btn-secondary" onclick="clearWorkoutLog()" style="height:52px;padding:0 16px;font-size:13px;white-space:nowrap;">Сброс дня</button>
+        </div>
+
+        <!-- Вкладки групп мышц -->
+        <div class="mg-tabs" id="muscleGroupTabs"></div>
+
+        <!-- Список упражнений с подходами -->
         <div class="card-body">
-          <div class="mg-tabs" id="muscleGroupTabs"></div>
           <div id="exerciseTracker" class="exercise-tracker"></div>
-          <button class="btn-secondary" onclick="clearWorkoutLog()" style="margin-top:12px;width:100%;font-size:12px;">🗑 Сбросить тренировку</button>
         </div>
       </div>
 
@@ -539,8 +589,10 @@
   // ============================================================
   document.addEventListener('DOMContentLoaded', () => {
     const today = new Date().toISOString().split('T')[0];
-    const dateInput = document.getElementById('mealDate');
-    if (dateInput) dateInput.value = today;
+    ['mealDate', 'myWeightDate'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = today;
+    });
   });
 </script>
 </body>

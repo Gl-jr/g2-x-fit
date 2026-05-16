@@ -75,8 +75,8 @@ body {
    ============================================================ */
 
 .cards-grid {
-    display: grid;
-    grid-template-columns: repeat(12, 1fr);
+    display: flex;
+    flex-direction: column;
     gap: var(--spacing-md);
 }
 
@@ -103,27 +103,29 @@ body {
     flex-wrap: wrap;
 }
 
-/* Дашборды равной ширины и одного размера: внутри карточки —
-   flex-колонка, контент скроллится, кнопки прижаты к низу. */
-#calcCard,
-#mealsCard,
-#healthCard,
-#coachCard,
-#recipesCard,
-#calendarCard,
-#weightCard,
-#assignCard { grid-column: span 6; height: 460px; display: flex; flex-direction: column; }
-#reportCard  { grid-column: span 12; height: 460px; display: flex; flex-direction: column; }
+/* ——————————————————————————————————————————————————————————
+   Все карточки: flex-колонка, полная ширина, без фиксированной высоты.
+   Карточки показываются по одной (showSection скрывает остальные).
+   —————————————————————————————————————————————————————————— */
+.card {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
 
-/* Внутри карточки только заголовок и контент-область со скроллом. */
+/* Заголовок карточки не сжимается */
 .card .card-header { flex-shrink: 0; }
+
+/* Прокручиваемое тело карточки — ограничиваем высоту, чтобы не рвать страницу */
 .card-body {
     flex: 1;
-    min-height: 0;
     overflow-y: auto;
     display: flex;
     flex-direction: column;
     gap: var(--spacing-sm);
+    max-height: calc(100vh - 280px);
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255,255,255,0.12) transparent;
 }
 
 /* ============================================================
@@ -305,16 +307,22 @@ button, .btn-action, .btn-primary, .btn-secondary, .btn-save, .btn-meal, .btn-fi
     transform: scale(0.98);
 }
 
-.btn-secondary, .btn-meal, .btn-filter, .btn-more {
-    background: transparent;
+.btn-secondary, .btn-filter, .btn-more {
+    background: rgba(255, 255, 255, 0.06);
     border: 1px solid var(--glass-border);
     color: var(--text-primary);
 }
+.btn-meal {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: var(--text-primary);
+    font-size: 14px !important;
+}
 
 .btn-secondary:hover, .btn-meal:hover, .btn-filter:hover, .btn-more:hover {
-    background: rgba(10, 132, 255, 0.15);
-    border-color: var(--accent);
-    color: var(--accent);
+    background: rgba(255, 255, 255, 0.10);
+    border-color: rgba(255, 255, 255, 0.20);
+    color: var(--text-primary);
 }
 
 .btn-logout {
@@ -422,9 +430,24 @@ button, .btn-action, .btn-primary, .btn-secondary, .btn-save, .btn-meal, .btn-fi
 }
 
 .nav-item .nav-icon {
-    font-size: 20px !important;
-    width: 24px;
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.7;
 }
+.nav-item .nav-icon svg {
+    width: 18px;
+    height: 18px;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 1.75;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+.nav-item.active .nav-icon { opacity: 1; }
 
 .nav-item:hover {
     background: rgba(255, 255, 255, 0.05);
@@ -432,27 +455,33 @@ button, .btn-action, .btn-primary, .btn-secondary, .btn-save, .btn-meal, .btn-fi
 }
 
 .nav-item.active {
-    background: rgba(10, 132, 255, 0.15) !important;
-    color: var(--accent) !important;
-    border-left: 3px solid var(--accent);
+    background: rgba(255, 255, 255, 0.10) !important;
+    color: var(--text-primary) !important;
+    font-weight: 600;
 }
 
 .sidebar-motivation {
-    padding: var(--spacing-md);
+    padding: var(--spacing-lg) var(--spacing-lg) var(--spacing-xl);
     border-top: 1px solid var(--glass-border);
     margin-top: auto;
 }
 
+.motivation-line {
+    height: 1px;
+    display: none; /* уже есть border-top */
+}
+
 .sidebar-motivation p {
     font-size: 12px;
-    color: var(--text-secondary);
-    line-height: 1.4;
+    color: var(--text-tertiary);
+    line-height: 1.5;
 }
 
 .main-content {
-    margin-left: 260px !important;
-    padding: var(--spacing-xl) !important;
+    margin-left: 260px;
+    padding: var(--spacing-lg) var(--spacing-xl);
     min-height: 100vh;
+    max-width: 960px;
 }
 
 .topbar {
@@ -561,10 +590,27 @@ button, .btn-action, .btn-primary, .btn-secondary, .btn-save, .btn-meal, .btn-fi
    ОТЧЁТЫ
    ============================================================ */
 
-.filter-buttons, .date-range {
+.filter-buttons {
     display: flex;
     gap: var(--spacing-sm);
-    margin-bottom: var(--spacing-lg);
+    margin-bottom: var(--spacing-sm);
+    flex-wrap: wrap;
+}
+.filter-buttons .btn-filter {
+    flex: 1;
+    min-width: 90px;
+    height: 44px !important;
+    font-size: 13px !important;
+}
+.date-range {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-sm);
+}
+/* «Показать отчёт» не должен растягиваться на весь экран */
+#reportCard .btn-action {
+    max-width: 240px;
 }
 
 .report-list {
@@ -1749,31 +1795,32 @@ input[name="modalRole"]:checked + .role-pill {
    ============================================================ */
 
 .mg-tabs {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    display: flex;
     gap: 6px;
     margin-bottom: var(--spacing-md);
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 2px;
 }
+.mg-tabs::-webkit-scrollbar { display: none; }
 .mg-tab {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 2px;
-    padding: 8px 4px;
-    border-radius: 12px;
-    background: rgba(255, 255, 255, 0.04);
+    flex-shrink: 0;
+    padding: 8px 16px;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.05);
     border: 1px solid var(--glass-border);
     color: var(--text-secondary);
-    font-size: 11px;
+    font-size: 13px;
     font-weight: 600;
     cursor: pointer;
+    white-space: nowrap;
     transition: all 0.15s;
 }
-.mg-tab span:first-child { font-size: 18px; }
 .mg-tab.active {
-    background: var(--accent-soft);
-    border-color: rgba(10, 132, 255, 0.4);
-    color: var(--accent);
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
 }
 
 .exercise-tracker { display: flex; flex-direction: column; gap: var(--spacing-sm); }

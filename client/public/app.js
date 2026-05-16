@@ -1884,35 +1884,47 @@ async function deleteAssignment(id) {
 }
 
 // ============================================================
-//  21. ДНЕВНИК ТРЕНИРОВОК (трекер по группам мышц)
+//  21. ДНЕВНИК ТРЕНИРОВОК — SQLite через API
+//      Тренер может просматривать тренировки ученика по той же схеме.
 // ============================================================
 
 const MUSCLE_GROUPS = {
-  chest:     { name: 'Грудь',      icon: '🫁', exercises: ['Жим штанги лёжа','Жим гантелей лёжа','Разводка гантелей','Отжимания на брусьях','Кроссовер на блоке'] },
-  back:      { name: 'Спина',      icon: '🦴', exercises: ['Становая тяга','Подтягивания','Тяга штанги в наклоне','Тяга верхнего блока','Тяга гантели одной рукой'] },
-  legs:      { name: 'Ноги',       icon: '🦵', exercises: ['Приседания со штангой','Жим ногами','Выпады с гантелями','Сгибание ног лёжа','Подъёмы на икры'] },
-  shoulders: { name: 'Плечи',      icon: '💪', exercises: ['Жим штанги стоя','Махи гантелями в стороны','Тяга к подбородку','Жим Арнольда','Обратные разводки'] },
-  arms:      { name: 'Руки',       icon: '🤸', exercises: ['Подъём штанги на бицепс','Молотки с гантелями','Французский жим','Разгибания на блоке','Концентрированные сгибания'] },
-  core:      { name: 'Пресс / Кор',icon: '🔥', exercises: ['Планка','Скручивания','Подъём ног лёжа','Русский твист','Ролик для пресса'] }
+  chest:     { name: 'Грудь',      exercises: ['Жим штанги лёжа','Жим гантелей лёжа','Разводка гантелей','Отжимания на брусьях','Кроссовер на блоке'] },
+  back:      { name: 'Спина',      exercises: ['Становая тяга','Подтягивания','Тяга штанги в наклоне','Тяга верхнего блока','Тяга гантели одной рукой'] },
+  legs:      { name: 'Ноги',       exercises: ['Приседания со штангой','Жим ногами','Выпады с гантелями','Сгибание ног лёжа','Подъёмы на икры'] },
+  shoulders: { name: 'Плечи',      exercises: ['Жим штанги стоя','Махи гантелями в стороны','Тяга к подбородку','Жим Арнольда','Обратные разводки'] },
+  arms:      { name: 'Руки',       exercises: ['Подъём штанги на бицепс','Молотки с гантелями','Французский жим','Разгибания на блоке','Концентрированные сгибания'] },
+  core:      { name: 'Пресс / Кор',exercises: ['Планка','Скручивания','Подъём ног лёжа','Русский твист','Ролик для пресса'] }
 };
 
-let activeMusclGroup = 'chest';
-// Хранилище подходов: { [muscle]: { [exercise]: [{kg, reps, note}] } }
+let activeMuscleGroup = 'chest';
+// workoutLog: { [muscle]: { [exercise]: [{id, kg, reps, note}] } }
 let workoutLog = {};
 
-function loadWorkoutLog() {
-  try {
-    workoutLog = JSON.parse(localStorage.getItem(`workoutLog_${userId}`) || '{}');
-  } catch { workoutLog = {}; }
+function _getWorkoutDate() {
+  return document.getElementById('workoutDate')?.value || new Date().toISOString().split('T')[0];
 }
 
-function saveWorkoutLog() {
-  localStorage.setItem(`workoutLog_${userId}`, JSON.stringify(workoutLog));
+// Загрузить подходы с сервера (SQLite)
+async function loadWorkoutFromServer() {
+  if (!userId) return;
+  const date = _getWorkoutDate();
+  const res  = await fetch(`http://localhost:3001/workout/${userId}?date=${date}`);
+  const rows = await res.json();
+
+  workoutLog = {};
+  rows.forEach(r => {
+    if (!workoutLog[r.muscle_group]) workoutLog[r.muscle_group] = {};
+    if (!workoutLog[r.muscle_group][r.exercise]) workoutLog[r.muscle_group][r.exercise] = [];
+    workoutLog[r.muscle_group][r.exercise].push({ id: r.id, kg: r.kg, reps: r.reps, note: r.note });
+  });
 }
 
-function initWorkoutTracker() {
-  loadWorkoutLog();
+async function initWorkoutTracker() {
+  const dateEl = document.getElementById('workoutDate');
+  if (dateEl && !dateEl.value) dateEl.value = new Date().toISOString().split('T')[0];
   renderMuscleGroupTabs();
+  await loadWorkoutFromServer();
   renderExerciseList();
 }
 
@@ -1920,15 +1932,14 @@ function renderMuscleGroupTabs() {
   const tabs = document.getElementById('muscleGroupTabs');
   if (!tabs) return;
   tabs.innerHTML = Object.entries(MUSCLE_GROUPS).map(([key, g]) => `
-    <button class="mg-tab${key === activeMusclGroup ? ' active' : ''}" onclick="selectMuscleGroup('${key}')">
-      <span>${g.icon}</span>
-      <span>${g.name}</span>
+    <button class="mg-tab${key === activeMuscleGroup ? ' active' : ''}" onclick="selectMuscleGroup('${key}')">
+      ${g.name}
     </button>
   `).join('');
 }
 
 function selectMuscleGroup(key) {
-  activeMusclGroup = key;
+  activeMuscleGroup = key;
   renderMuscleGroupTabs();
   renderExerciseList();
 }
@@ -1936,18 +1947,17 @@ function selectMuscleGroup(key) {
 function renderExerciseList() {
   const container = document.getElementById('exerciseTracker');
   if (!container) return;
-  const group = MUSCLE_GROUPS[activeMusclGroup];
-  if (!workoutLog[activeMusclGroup]) workoutLog[activeMusclGroup] = {};
+  const group = MUSCLE_GROUPS[activeMuscleGroup];
 
   container.innerHTML = group.exercises.map(name => {
-    const safeKey  = name.replace(/['"]/g, '');
-    const sets     = workoutLog[activeMusclGroup][name] || [];
-    const setsHtml = sets.map((s, i) => `
+    const safeId   = name.replace(/[^а-яёa-z0-9]/gi, '_');
+    const sets     = workoutLog[activeMuscleGroup]?.[name] || [];
+    const setsHtml = sets.map(s => `
       <div class="workout-set">
-        <span class="set-num">${i + 1}</span>
+        <span class="set-num">${sets.indexOf(s) + 1}</span>
         <span class="set-data">${s.kg} кг × ${s.reps} повт.</span>
         ${s.note ? `<span class="set-note">${s.note}</span>` : ''}
-        <button class="set-del" onclick="removeSet('${activeMusclGroup}','${safeKey}',${i})" title="Удалить">✕</button>
+        <button class="set-del" onclick="removeSet(${s.id})" title="Удалить">✕</button>
       </div>`).join('');
 
     return `
@@ -1958,40 +1968,81 @@ function renderExerciseList() {
         </div>
         ${setsHtml ? `<div class="sets-list">${setsHtml}</div>` : ''}
         <div class="add-set-row">
-          <input type="number" class="set-input" id="kg_${safeKey.replace(/\s/g,'_')}" placeholder="кг" min="0" step="0.5">
-          <input type="number" class="set-input" id="reps_${safeKey.replace(/\s/g,'_')}" placeholder="повт" min="1">
-          <input type="text"   class="set-input set-note-input" id="note_${safeKey.replace(/\s/g,'_')}" placeholder="заметка">
-          <button class="btn-secondary" onclick="addSet('${activeMusclGroup}','${safeKey}')">＋</button>
+          <input type="number" class="set-input" id="kg_${safeId}" placeholder="кг" min="0" step="0.5">
+          <input type="number" class="set-input" id="reps_${safeId}" placeholder="повт" min="1">
+          <input type="text"   class="set-input set-note-input" id="note_${safeId}" placeholder="заметка (опц.)">
+          <button class="btn-secondary" onclick="addSet('${activeMuscleGroup}','${name}','${safeId}')">＋</button>
         </div>
       </div>`;
   }).join('');
 }
 
-function addSet(muscle, exerciseName) {
-  const safeId = exerciseName.replace(/\s/g, '_');
-  const kg     = parseFloat(document.getElementById(`kg_${safeId}`)?.value)   || 0;
-  const reps   = parseInt(document.getElementById(`reps_${safeId}`)?.value)   || 0;
-  const note   = document.getElementById(`note_${safeId}`)?.value.trim()       || '';
+async function addSet(muscle, exerciseName, safeId) {
+  const kg   = parseFloat(document.getElementById(`kg_${safeId}`)?.value)   || 0;
+  const reps = parseInt(document.getElementById(`reps_${safeId}`)?.value)   || 0;
+  const note = document.getElementById(`note_${safeId}`)?.value.trim()      || '';
+  const date = _getWorkoutDate();
 
-  if (!workoutLog[muscle]) workoutLog[muscle] = {};
-  if (!workoutLog[muscle][exerciseName]) workoutLog[muscle][exerciseName] = [];
-  workoutLog[muscle][exerciseName].push({ kg, reps, note });
-  saveWorkoutLog();
+  await fetch(`http://localhost:3001/workout/${userId}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ workout_date: date, muscle_group: muscle, exercise: exerciseName, kg, reps, note })
+  });
+
+  // Очищаем поля ввода
+  ['kg_', 'reps_', 'note_'].forEach(prefix => {
+    const el = document.getElementById(`${prefix}${safeId}`);
+    if (el) el.value = '';
+  });
+
+  await loadWorkoutFromServer();
   renderExerciseList();
 }
 
-function removeSet(muscle, exerciseName, idx) {
-  workoutLog[muscle]?.[exerciseName]?.splice(idx, 1);
-  saveWorkoutLog();
+async function removeSet(setId) {
+  await fetch(`http://localhost:3001/workout/${userId}/${setId}`, { method: 'DELETE' });
+  await loadWorkoutFromServer();
   renderExerciseList();
 }
 
-// Сброс дневника на сегодня (новая тренировка)
-function clearWorkoutLog() {
-  if (!confirm('Очистить дневник тренировки?')) return;
+async function clearWorkoutLog() {
+  if (!confirm('Очистить все подходы за эту дату?')) return;
+  // Удаляем через server: загружаем все id и удаляем по одному
+  const date = _getWorkoutDate();
+  const res  = await fetch(`http://localhost:3001/workout/${userId}?date=${date}`);
+  const rows = await res.json();
+  await Promise.all(rows.map(r => fetch(`http://localhost:3001/workout/${userId}/${r.id}`, { method: 'DELETE' })));
   workoutLog = {};
-  saveWorkoutLog();
   renderExerciseList();
+}
+
+// Смена даты тренировки — перезагружаем данные
+async function onWorkoutDateChange() {
+  await loadWorkoutFromServer();
+  renderExerciseList();
+}
+
+// ============================================================
+//  22. ЖУРНАЛ СОБСТВЕННОГО ВЕСА (для студента — в разделе Прогресс)
+// ============================================================
+
+async function logMyWeight() {
+  const date = document.getElementById('myWeightDate')?.value;
+  const kg   = parseFloat(document.getElementById('myWeightKg')?.value);
+  if (!date || !kg) { alert('Введите дату и вес'); return; }
+
+  const res  = await fetch('http://localhost:3001/my-weight', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ userId, date, kg })
+  });
+  const data = await res.json();
+  if (data.error) { alert(data.error); return; }
+
+  document.getElementById('myWeightKg').value = '';
+  // Маленький фидбэк
+  const btn = document.getElementById('btnLogWeight');
+  if (btn) { btn.textContent = '✅ Сохранено'; setTimeout(() => { btn.textContent = 'Записать'; }, 2000); }
 }
 
 // ============================================================

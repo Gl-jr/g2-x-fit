@@ -104,9 +104,23 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_users_nickname    ON users(nickname);
   CREATE INDEX IF NOT EXISTS idx_users_tag         ON users(tag);
   CREATE INDEX IF NOT EXISTS idx_foods_user        ON foods(user_id);
-  CREATE INDEX IF NOT EXISTS idx_weights_user_date ON weights(user_id, date);
-  CREATE INDEX IF NOT EXISTS idx_assignments_coach ON assignments(coach_id);
+  CREATE TABLE IF NOT EXISTS workout_sets (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id      INTEGER NOT NULL,
+    workout_date TEXT NOT NULL,
+    muscle_group TEXT NOT NULL,
+    exercise     TEXT NOT NULL,
+    kg           REAL    DEFAULT 0,
+    reps         INTEGER DEFAULT 0,
+    note         TEXT    DEFAULT '',
+    created_at   TEXT NOT NULL DEFAULT (datetime('now')),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_weights_user_date   ON weights(user_id, date);
+  CREATE INDEX IF NOT EXISTS idx_assignments_coach   ON assignments(coach_id);
   CREATE INDEX IF NOT EXISTS idx_assignments_student ON assignments(student_id);
+  CREATE INDEX IF NOT EXISTS idx_workout_user_date   ON workout_sets(user_id, workout_date);
 `);
 
 // ============================================================
@@ -403,6 +417,46 @@ app.delete('/group/:coachId/remove/:studentId', (req, res) => {
 });
 
 // ============================================================
+//  ДНЕВНИК ТРЕНИРОВОК (подходы по упражнениям)
+// ============================================================
+
+// Получить все подходы пользователя на конкретную дату
+app.get('/workout/:userId', (req, res) => {
+  const { date } = req.query;
+  if (!date) return res.json([]);
+  const rows = db.prepare(
+    'SELECT * FROM workout_sets WHERE user_id = ? AND workout_date = ? ORDER BY id ASC'
+  ).all(req.params.userId, date);
+  res.json(rows);
+});
+
+// Получить все даты тренировок (для календаря)
+app.get('/workout/:userId/dates', (req, res) => {
+  const rows = db.prepare(
+    'SELECT DISTINCT workout_date AS date FROM workout_sets WHERE user_id = ? ORDER BY workout_date DESC'
+  ).all(req.params.userId);
+  res.json(rows.map(r => r.date));
+});
+
+// Добавить подход
+app.post('/workout/:userId', (req, res) => {
+  const { workout_date, muscle_group, exercise, kg, reps, note } = req.body;
+  if (!workout_date || !muscle_group || !exercise) return res.json({ error: 'Нет данных' });
+  const info = db.prepare(`
+    INSERT INTO workout_sets (user_id, workout_date, muscle_group, exercise, kg, reps, note)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+  `).run(req.params.userId, workout_date, muscle_group, exercise, kg || 0, reps || 0, note || '');
+  res.json({ id: info.lastInsertRowid, message: 'Подход добавлен' });
+});
+
+// Удалить подход
+app.delete('/workout/:userId/:id', (req, res) => {
+  db.prepare('DELETE FROM workout_sets WHERE id = ? AND user_id = ?')
+    .run(req.params.id, req.params.userId);
+  res.json({ message: 'Удалено' });
+});
+
+// ============================================================
 //  ВЕС ПОЛЬЗОВАТЕЛЯ (трекинг по датам)
 // ============================================================
 
@@ -425,6 +479,15 @@ app.delete('/weights/:userId/:id', (req, res) => {
   db.prepare('DELETE FROM weights WHERE id = ? AND user_id = ?')
     .run(req.params.id, req.params.userId);
   res.json({ message: 'Удалено' });
+});
+
+// Студент логирует собственный вес (вызывается из раздела «Прогресс»)
+app.post('/my-weight', (req, res) => {
+  const { userId: uid, date, kg } = req.body;
+  if (!uid || !date || kg == null) return res.json({ error: 'Нет данных' });
+  db.prepare('INSERT OR REPLACE INTO weights (user_id, date, kg) VALUES (?, ?, ?)')
+    .run(uid, date, kg);
+  res.json({ message: 'Вес сохранён' });
 });
 
 // ============================================================
