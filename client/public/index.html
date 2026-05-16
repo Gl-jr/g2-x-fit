@@ -166,7 +166,7 @@
         <span>Калькулятор</span>
       </a>
       <a class="nav-item"           data-section="mealsCard"          onclick="showSection('mealsCard')">
-        <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg></span>
+        <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><line x1="7" y1="2" x2="7" y2="22"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3z"/><line x1="21" y1="15" x2="21" y2="22"/></svg></span>
         <span>Дневник питания</span>
       </a>
       <a class="nav-item"           data-section="reportCard"         onclick="showSection('reportCard')">
@@ -471,20 +471,8 @@
           <h2>Рецепты</h2>
         </div>
 
-        <div class="recipe-tabs">
-          <button id="tabMealPlan" class="recipe-tab active" onclick="switchRecipeTab('mealplan')">Рацион дня</button>
-          <button id="tabProducts" class="recipe-tab"        onclick="switchRecipeTab('products')">Подбор по продуктам</button>
-        </div>
-
         <div id="panelMealPlan">
           <div id="recipesList" class="recipes-list"></div>
-        </div>
-
-        <div id="panelProducts" style="display:none;">
-          <p class="chat-hint">Выберите доступные продукты</p>
-          <div id="productsGrid" class="products-grid"></div>
-          <button class="btn-action" onclick="findRecipes()" style="margin-top:20px;">Найти рецепты</button>
-          <div id="productsRecipesList" class="recipes-list"></div>
         </div>
       </div>
 
@@ -534,7 +522,6 @@
     if (sectionId === 'recipesCard') {
       setTimeout(() => {
         if (typeof renderMealPlanSection === 'function') renderMealPlanSection();
-        if (typeof renderProductsGrid    === 'function') renderProductsGrid();
       }, 50);
     }
     if (sectionId === 'healthCard'          && typeof loadHealth         === 'function') loadHealth();

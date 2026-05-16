@@ -664,32 +664,7 @@ function findRecipesByProducts(selectedProducts, allRecipes) {
   }).sort((a, b) => b.matchCount - a.matchCount);
 }
 
-function switchRecipeTab(tab) {
-  const mealPlanPanel = document.getElementById("panelMealPlan");
-  const productsPanel = document.getElementById("panelProducts");
-  const tabMealPlan = document.getElementById("tabMealPlan");
-  const tabProducts = document.getElementById("tabProducts");
-  if (tab === 'mealplan') {
-    mealPlanPanel.style.display = 'block';
-    productsPanel.style.display = 'none';
-    tabMealPlan.style.background = 'var(--accent)';
-    tabMealPlan.style.color = 'white';
-    tabMealPlan.style.border = 'none';
-    tabProducts.style.background = 'rgba(255,255,255,0.05)';
-    tabProducts.style.color = 'var(--text-secondary)';
-    tabProducts.style.border = '1px solid var(--glass-border)';
-    renderMealPlanSection();
-  } else {
-    mealPlanPanel.style.display = 'none';
-    productsPanel.style.display = 'block';
-    tabProducts.style.background = 'var(--accent)';
-    tabProducts.style.color = 'white';
-    tabProducts.style.border = 'none';
-    tabMealPlan.style.background = 'rgba(255,255,255,0.05)';
-    tabMealPlan.style.color = 'var(--text-secondary)';
-    tabMealPlan.style.border = '1px solid var(--glass-border)';
-  }
-}
+/* switchRecipeTab удалён — вкладка «Подбор по продуктам» убрана */
 
 function findRecipes() {
   const saved = JSON.parse(localStorage.getItem(`selectedProducts_${userId}`) || "[]");
@@ -1048,10 +1023,10 @@ function loadMainPageData() {
   if (newsContainer) {
     const todayNews = getTodayNews();
     newsContainer.innerHTML = todayNews.map(news => `
-      <div class="news-item" onclick="window.open('${news.link}','_blank')" style="cursor:pointer;">
+      <a class="news-item" href="${news.link}" target="_blank" rel="noopener noreferrer">
         <div class="news-title">${news.title}</div>
         <div class="news-date">📅 ${today} · <span style="color:var(--accent);">${news.src}</span> · Читать →</div>
-      </div>`).join('');
+      </a>`).join('');
   }
 
   // === ГОТОВЫЕ РАЦИОНЫ ===
@@ -1078,11 +1053,11 @@ function loadMainPageData() {
   const exercisesContainer = document.getElementById('exercisesList');
   if (exercisesContainer) {
     exercisesContainer.innerHTML = exercisesData.map(ex => `
-      <div class="exercise-item" onclick="window.open('${ex.videoUrl}','_blank')" style="cursor:pointer;">
+      <a class="exercise-item" href="${ex.videoUrl}" target="_blank" rel="noopener noreferrer">
         <div class="exercise-name">🎥 ${ex.name}</div>
         <div class="exercise-desc">${ex.desc}</div>
-        <div style="font-size:10px; color:var(--text-secondary); margin-top:3px;">▶ ${ex.channel} на YouTube</div>
-      </div>`).join('');
+        <div style="font-size:10px; color:var(--accent); margin-top:3px;">▶ ${ex.channel} · YouTube</div>
+      </a>`).join('');
   }
 
 }
@@ -1864,16 +1839,19 @@ async function loadAssignments() {
     return FULL_MEAL_PLANS[key]?.name || key;
   };
 
+  const trashIcon = `<svg viewBox="0 0 24 24" width="15" height="15"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`;
+
   list.innerHTML = rows.map(a => {
-    const typeName = a.type === 'workout' ? '💪 Тренировки' : '🥗 Питание';
-    const target   = a.student_name || a.student_email || '👥 Вся группа';
-    const period   = a.start_date ? `${a.start_date} — ${a.end_date || '∞'}` : 'Без ограничений';
-    return `<li class="student-row">
-      <div class="student-info">
-        <strong>${typeName}: ${planLabel(a.type, a.plan_key)}</strong>
-        <small>${target} · ${period}</small>
+    const badge  = a.type === 'workout' ? '💪' : '🥗';
+    const target = a.student_name || a.student_email || 'Вся группа';
+    const period = a.start_date ? `${a.start_date} — ${a.end_date || '∞'}` : 'Без ограничений';
+    return `<li class="assign-item">
+      <span class="assign-badge">${badge}</span>
+      <div class="assign-info">
+        <span class="assign-plan">${planLabel(a.type, a.plan_key)}</span>
+        <span class="assign-meta">${target} · ${period}</span>
       </div>
-      <button class="btn-secondary" onclick="deleteAssignment(${a.id})">Удалить</button>
+      <button class="btn-trash" onclick="deleteAssignment(${a.id})" title="Удалить">${trashIcon}</button>
     </li>`;
   }).join('');
 }
