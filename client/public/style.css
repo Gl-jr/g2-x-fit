@@ -103,13 +103,28 @@ body {
     flex-wrap: wrap;
 }
 
-/* Дашборды равной ширины: 2 в ряд (по 6) или на всю ширину (12). */
+/* Дашборды равной ширины и одного размера: внутри карточки —
+   flex-колонка, контент скроллится, кнопки прижаты к низу. */
 #calcCard,
 #mealsCard,
 #healthCard,
 #coachCard,
-#recipesCard { grid-column: span 6; min-height: 520px; display: flex; flex-direction: column; }
-#reportCard  { grid-column: span 12; min-height: 520px; display: flex; flex-direction: column; }
+#recipesCard,
+#calendarCard,
+#weightCard,
+#assignCard { grid-column: span 6; height: 460px; display: flex; flex-direction: column; }
+#reportCard  { grid-column: span 12; height: 460px; display: flex; flex-direction: column; }
+
+/* Внутри карточки только заголовок и контент-область со скроллом. */
+.card .card-header { flex-shrink: 0; }
+.card-body {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
 
 /* ============================================================
    КАЛЕНДАРЬ (слева)
@@ -904,7 +919,7 @@ progress::-webkit-progress-bar {
 .main-card {
     display: flex;
     flex-direction: column;
-    min-height: 520px;
+    height: 420px;
     padding: var(--spacing-lg);
     border-radius: var(--radius-card);
 }
@@ -1340,96 +1355,43 @@ progress::-webkit-progress-bar {
     }
 }
 /* ============================================================
-   GLASS-ЭФФЕКТ С ОТСЛЕЖИВАНИЕМ КУРСОРА
-   --mx/--my — позиция курсора, --rx/--ry — лёгкий 3D-наклон.
-   ::before — яркое пятно за курсором, ::after — белая каёмка-
-   градиент (highlight + ободок), которая ярче со стороны курсора.
+   GLASS-ЭФФЕКТ С ОТСЛЕЖИВАНИЕМ КУРСОРА — АККУРАТНЫЙ ВАРИАНТ
+   --mx/--my — позиция курсора в карточке. Одна радиальная
+   подсветка, без 3D-наклона, минимальная амплитуда.
    ============================================================ */
 
 .glass-tilt {
     position: relative;
     overflow: hidden;
     isolation: isolate;
-    background:
-        linear-gradient(135deg,
-            rgba(255, 255, 255, 0.06),
-            rgba(255, 255, 255, 0.02) 60%),
-        rgba(255, 255, 255, 0.04);
-    backdrop-filter: blur(36px) saturate(180%);
-    -webkit-backdrop-filter: blur(36px) saturate(180%);
+    background: rgba(255, 255, 255, 0.035);
+    backdrop-filter: blur(18px) saturate(140%);
+    -webkit-backdrop-filter: blur(18px) saturate(140%);
     border: 1px solid var(--glass-border);
     border-radius: var(--radius-card);
-    box-shadow:
-        0 1px 0 rgba(255, 255, 255, 0.08) inset,
-        0 24px 48px -24px rgba(0, 0, 0, 0.6);
-    transform-style: preserve-3d;
-    transition: border-color 0.3s ease, transform 0.4s ease, box-shadow 0.3s ease;
-    will-change: transform;
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset;
+    transition: border-color 0.25s ease, box-shadow 0.25s ease;
 }
 
-/* Яркое пятно — следует за курсором */
+/* Лёгкая подсветка за курсором — едва заметная, без мерцания. */
 .glass-tilt::before {
     content: "";
     position: absolute;
     inset: 0;
-    background:
-        radial-gradient(
-            260px circle at var(--mx, 50%) var(--my, 50%),
-            rgba(255, 255, 255, 0.18),
-            rgba(10, 132, 255, 0.22) 30%,
-            transparent 65%),
-        radial-gradient(
-            520px circle at var(--mx, 50%) var(--my, 50%),
-            rgba(10, 132, 255, 0.10),
-            transparent 70%);
-    mix-blend-mode: screen;
+    background: radial-gradient(
+        260px circle at var(--mx, 50%) var(--my, 50%),
+        rgba(255, 255, 255, 0.07),
+        transparent 60%
+    );
     opacity: 0;
-    transition: opacity 0.25s ease;
+    transition: opacity 0.3s ease;
     pointer-events: none;
     z-index: 0;
 }
 
-/* Ободок-градиент. На обычном состоянии — мягкий, при наведении
-   светлеет со стороны курсора (через conic-gradient + --mx/--my). */
-.glass-tilt::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    padding: 1px;
-    background: conic-gradient(
-        from 0deg at var(--mx, 50%) var(--my, 50%),
-        rgba(255, 255, 255, 0.40),
-        rgba(255, 255, 255, 0.05) 35%,
-        rgba(10, 132, 255, 0.30) 55%,
-        rgba(255, 255, 255, 0.05) 75%,
-        rgba(255, 255, 255, 0.40)
-    );
-    -webkit-mask:
-        linear-gradient(#000 0 0) content-box,
-        linear-gradient(#000 0 0);
-    -webkit-mask-composite: xor;
-            mask-composite: exclude;
-    pointer-events: none;
-    z-index: 1;
-    opacity: 0.5;
-    transition: opacity 0.3s ease;
-}
-
-.glass-tilt.is-hovered                { border-color: var(--glass-border-strong); }
-.glass-tilt.is-hovered::before        { opacity: 1; }
-.glass-tilt.is-hovered::after         { opacity: 1; }
-.glass-tilt.is-hovered                {
-    transform: perspective(900px)
-               rotateX(var(--rx, 0deg))
-               rotateY(var(--ry, 0deg))
-               translateZ(0);
-    box-shadow:
-        0 1px 0 rgba(255, 255, 255, 0.14) inset,
-        0 30px 60px -22px rgba(10, 132, 255, 0.35),
-        0 30px 60px -28px rgba(0, 0, 0, 0.7);
-}
-.glass-tilt > *                       { position: relative; z-index: 2; }
+.glass-tilt.is-hovered             { border-color: rgba(255, 255, 255, 0.14); }
+.glass-tilt.is-hovered::before     { opacity: 1; }
+.glass-tilt > *                    { position: relative; z-index: 2; }
 
 /* ============================================================
    ФОРМА АВТОРИЗАЦИИ — СЕКЦИИ
@@ -1455,11 +1417,42 @@ progress::-webkit-progress-bar {
 .auth-buttons {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: var(--spacing-sm);
+    gap: var(--spacing-md);
     margin-top: var(--spacing-lg);
 }
 .auth-buttons > button {
     width: 100%;
+    padding: 0 var(--spacing-md) !important;
+}
+
+/* Карточки выбора роли — две большие плитки. */
+.role-pills {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-sm);
+}
+.role-pill {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 4px;
+    padding: var(--spacing-md) var(--spacing-sm);
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    cursor: pointer;
+    user-select: none;
+    transition: border-color 0.2s ease, background 0.2s ease, transform 0.15s ease;
+}
+.role-pill:hover { background: rgba(255, 255, 255, 0.07); }
+.role-pill-icon  { font-size: 26px; line-height: 1; }
+.role-pill-title { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+.role-pill-desc  { font-size: 11px; color: var(--text-secondary); }
+
+input[name="modalRole"]:checked + .role-pill {
+    background: var(--accent-soft);
+    border-color: rgba(10, 132, 255, 0.55);
 }
 .btn-link {
     background: none !important;
@@ -1612,3 +1605,301 @@ progress::-webkit-progress-bar {
 }
 .action-row > .btn-action  { flex: 1; min-width: 180px; }
 .action-row > .btn-secondary { min-width: 110px; }
+
+/* ============================================================
+   ФОРМ-ПОЛЯ ДЛЯ НАЗНАЧЕНИЙ (тренер)
+   ============================================================ */
+
+.form-row {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-sm);
+}
+.form-label {
+    min-width: 80px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.form-row .select-wrapper  { flex: 1; }
+.form-row .input-row       { flex: 1; gap: var(--spacing-sm); }
+
+.assign-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: var(--spacing-sm);
+}
+
+/* ============================================================
+   РАЗДЕЛ "ТРЕНИРОВКИ" — вес учеников + KPI
+   ============================================================ */
+
+.chart-wrap {
+    position: relative;
+    height: 220px;
+    margin: var(--spacing-md) 0;
+}
+.weight-kpi-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing-md);
+}
+.weight-kpi-row .kpi { padding: var(--spacing-sm) var(--spacing-md); }
+.weight-kpi-row .kpi-value { font-size: 20px; }
+
+/* ============================================================
+   КАЛЕНДАРЬ
+   ============================================================ */
+
+.calendar-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--spacing-md);
+}
+.calendar-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+    text-transform: capitalize;
+}
+.cal-nav {
+    width: 36px !important;
+    height: 36px !important;
+    padding: 0 !important;
+    min-width: unset !important;
+    font-size: 18px;
+}
+.calendar-grid-head {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+    margin-bottom: 6px;
+}
+.calendar-grid-head span {
+    text-align: center;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 4px 0;
+}
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+    margin-bottom: var(--spacing-md);
+}
+.cal-cell {
+    aspect-ratio: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    font-size: 13px;
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid transparent;
+    transition: background 0.15s;
+    cursor: default;
+}
+.cal-cell.empty { background: transparent; border-color: transparent; }
+.cal-cell.cal-today {
+    background: var(--accent-soft);
+    border-color: rgba(10, 132, 255, 0.4);
+    font-weight: 700;
+    color: var(--accent);
+}
+.cal-dots {
+    display: flex;
+    gap: 2px;
+    margin-top: 2px;
+}
+.dot {
+    display: inline-block;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+}
+.dot-meal { background: var(--apple-green); }
+.dot-plan { background: var(--accent); }
+
+.calendar-legend {
+    display: flex;
+    gap: var(--spacing-md);
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+.calendar-legend span {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* ============================================================
+   ДНЕВНИК ТРЕНИРОВОК: группы мышц + подходы
+   ============================================================ */
+
+.mg-tabs {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    margin-bottom: var(--spacing-md);
+}
+.mg-tab {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 8px 4px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--glass-border);
+    color: var(--text-secondary);
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+.mg-tab span:first-child { font-size: 18px; }
+.mg-tab.active {
+    background: var(--accent-soft);
+    border-color: rgba(10, 132, 255, 0.4);
+    color: var(--accent);
+}
+
+.exercise-tracker { display: flex; flex-direction: column; gap: var(--spacing-sm); }
+
+.exercise-block {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    padding: var(--spacing-md);
+}
+.exercise-block-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--spacing-sm);
+}
+.exercise-block-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+.exercise-block-count {
+    font-size: 12px;
+    color: var(--text-secondary);
+    background: rgba(255, 255, 255, 0.06);
+    padding: 2px 8px;
+    border-radius: 999px;
+}
+
+.sets-list { display: flex; flex-direction: column; gap: 4px; margin-bottom: var(--spacing-sm); }
+.workout-set {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    background: rgba(10, 132, 255, 0.06);
+    border-radius: 10px;
+    font-size: 13px;
+}
+.set-num {
+    min-width: 20px;
+    font-weight: 700;
+    color: var(--accent);
+    font-size: 12px;
+}
+.set-data  { flex: 1; color: var(--text-primary); font-weight: 600; }
+.set-note  { flex: 1; color: var(--text-secondary); font-size: 11px; font-style: italic; }
+.set-del {
+    width: 22px !important;
+    height: 22px !important;
+    padding: 0 !important;
+    font-size: 10px !important;
+    border-radius: 50% !important;
+    background: rgba(255, 69, 58, 0.15) !important;
+    border: none !important;
+    color: var(--apple-red) !important;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.add-set-row {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+.set-input {
+    height: 40px !important;
+    padding: 0 10px !important;
+    font-size: 13px !important;
+    border-radius: 10px !important;
+    min-width: 0;
+}
+.set-input:not(.set-note-input) { width: 70px !important; flex-shrink: 0; }
+.set-note-input                  { flex: 1; }
+.add-set-row .btn-secondary {
+    height: 40px !important;
+    padding: 0 14px !important;
+    font-size: 18px !important;
+    flex-shrink: 0;
+}
+
+/* card-body — scrollable inner area, нужна для правильной прокрутки внутри фиксированной карточки */
+.card-body {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255,255,255,0.1) transparent;
+}
+
+/* ============================================================
+   КАЛЬКУЛЯТОР: результат БЖУ
+   ============================================================ */
+
+.norm-goal-label {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-bottom: var(--spacing-sm);
+    text-align: center;
+}
+.norm-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-sm);
+}
+.norm-kpi {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: var(--spacing-sm);
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+}
+.norm-kpi-val {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -1px;
+}
+.norm-kpi-label {
+    font-size: 11px;
+    color: var(--text-secondary);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 2px;
+}

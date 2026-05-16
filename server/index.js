@@ -79,9 +79,34 @@ db.exec(`
     FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE
   );
 
-  CREATE INDEX IF NOT EXISTS idx_users_nickname ON users(nickname);
-  CREATE INDEX IF NOT EXISTS idx_users_tag      ON users(tag);
-  CREATE INDEX IF NOT EXISTS idx_foods_user     ON foods(user_id);
+  CREATE TABLE IF NOT EXISTS weights (
+    id      INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    date    TEXT NOT NULL,
+    kg      REAL NOT NULL,
+    UNIQUE (user_id, date),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+  );
+
+  CREATE TABLE IF NOT EXISTS assignments (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    coach_id   INTEGER NOT NULL,
+    student_id INTEGER,         -- null если назначено всей группе тренера
+    type       TEXT NOT NULL,   -- workout | meal
+    plan_key   TEXT NOT NULL,   -- ключ программы (split, fullbody, lose, ...)
+    start_date TEXT,
+    end_date   TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    FOREIGN KEY (coach_id)   REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_users_nickname    ON users(nickname);
+  CREATE INDEX IF NOT EXISTS idx_users_tag         ON users(tag);
+  CREATE INDEX IF NOT EXISTS idx_foods_user        ON foods(user_id);
+  CREATE INDEX IF NOT EXISTS idx_weights_user_date ON weights(user_id, date);
+  CREATE INDEX IF NOT EXISTS idx_assignments_coach ON assignments(coach_id);
+  CREATE INDEX IF NOT EXISTS idx_assignments_student ON assignments(student_id);
 `);
 
 // ============================================================
@@ -375,6 +400,65 @@ app.delete('/group/:coachId/remove/:studentId', (req, res) => {
   db.prepare('DELETE FROM coach_students WHERE coach_id = ? AND student_id = ?')
     .run(req.params.coachId, req.params.studentId);
   res.json({ message: 'Ученик удалён' });
+});
+
+// ============================================================
+//  ВЕС ПОЛЬЗОВАТЕЛЯ (трекинг по датам)
+// ============================================================
+
+app.get('/weights/:userId', (req, res) => {
+  const rows = db.prepare(
+    'SELECT id, date, kg FROM weights WHERE user_id = ? ORDER BY date ASC'
+  ).all(req.params.userId);
+  res.json(rows);
+});
+
+app.post('/weights/:userId', (req, res) => {
+  const { date, kg } = req.body;
+  if (!date || kg == null) return res.json({ error: 'Нет данных' });
+  db.prepare('INSERT OR REPLACE INTO weights (user_id, date, kg) VALUES (?, ?, ?)')
+    .run(req.params.userId, date, kg);
+  res.json({ message: 'Сохранено' });
+});
+
+app.delete('/weights/:userId/:id', (req, res) => {
+  db.prepare('DELETE FROM weights WHERE id = ? AND user_id = ?')
+    .run(req.params.id, req.params.userId);
+  res.json({ message: 'Удалено' });
+});
+
+// ============================================================
+//  НАЗНАЧЕНИЯ: план тренировок / питания
+// ============================================================
+
+app.get('/assignments', (req, res) => {
+  const { coachId } = req.query;
+  if (!coachId) return res.json([]);
+  const rows = db.prepare(`
+    SELECT a.*,
+           u.nickname AS student_name,
+           u.email    AS student_email
+      FROM assignments a
+      LEFT JOIN users u ON u.id = a.student_id
+     WHERE a.coach_id = ?
+     ORDER BY a.created_at DESC
+  `).all(coachId);
+  res.json(rows);
+});
+
+app.post('/assignments', (req, res) => {
+  const { coachId, studentId, type, planKey, startDate, endDate } = req.body;
+  if (!coachId || !type || !planKey) return res.json({ error: 'Нет данных' });
+  const info = db.prepare(`
+    INSERT INTO assignments (coach_id, student_id, type, plan_key, start_date, end_date)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `).run(coachId, studentId || null, type, planKey, startDate || null, endDate || null);
+  res.json({ id: info.lastInsertRowid, message: 'Назначено' });
+});
+
+app.delete('/assignments/:id', (req, res) => {
+  db.prepare('DELETE FROM assignments WHERE id = ?').run(req.params.id);
+  res.json({ message: 'Удалено' });
 });
 
 // ============================================================

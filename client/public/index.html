@@ -9,6 +9,8 @@
   <link rel="stylesheet" href="style.css">
   <!-- SheetJS для экспорта в Excel -->
   <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+  <!-- Chart.js для графика веса -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 </head>
 <body>
 
@@ -115,14 +117,22 @@
         <div class="input-group">
           <input id="modalNickname" placeholder="Никнейм (виден тренеру)" type="text" autocomplete="nickname">
         </div>
-        <div class="input-group">
-          <input id="modalTag" placeholder="Тэг группы, напр. #group-a" type="text">
-        </div>
-        <div class="select-wrapper">
-          <select id="modalRole">
-            <option value="student">Я ученик</option>
-            <option value="coach">Я тренер</option>
-          </select>
+
+        <span class="auth-section-label" style="margin-top: 8px;">Кто вы</span>
+        <div class="role-pills" role="radiogroup" aria-label="Выбор роли">
+          <input type="radio" id="roleStudent" name="modalRole" value="student" checked hidden>
+          <label for="roleStudent" class="role-pill">
+            <span class="role-pill-icon">🎓</span>
+            <span class="role-pill-title">Ученик</span>
+            <span class="role-pill-desc">Веду свой дневник</span>
+          </label>
+
+          <input type="radio" id="roleCoach"   name="modalRole" value="coach" hidden>
+          <label for="roleCoach" class="role-pill">
+            <span class="role-pill-icon">👥</span>
+            <span class="role-pill-title">Тренер</span>
+            <span class="role-pill-desc">Веду группу учеников</span>
+          </label>
         </div>
       </div>
 
@@ -151,12 +161,16 @@
     </div>
 
     <nav class="sidebar-nav">
-      <a class="nav-item active" data-section="calcCard"    onclick="showSection('calcCard')">    <span class="nav-icon">⚖️</span><span>Калькулятор</span></a>
-      <a class="nav-item"        data-section="mealsCard"   onclick="showSection('mealsCard')">   <span class="nav-icon">🍽️</span><span>Дневник питания</span></a>
-      <a class="nav-item"        data-section="reportCard"  onclick="showSection('reportCard')">  <span class="nav-icon">📈</span><span>Прогресс</span></a>
-      <a class="nav-item"        data-section="healthCard"  onclick="showSection('healthCard')">  <span class="nav-icon">❤️</span><span>Здоровье</span></a>
-      <a class="nav-item nav-coach" data-section="coachCard" onclick="showSection('coachCard')" style="display:none;"><span class="nav-icon">👥</span><span>Группа</span></a>
-      <a class="nav-item"        data-section="recipesCard" onclick="showSection('recipesCard')"> <span class="nav-icon">📖</span><span>Рецепты</span></a>
+      <a class="nav-item active"     data-section="calcCard"     onclick="showSection('calcCard')">     <span class="nav-icon">⚖️</span><span>Калькулятор</span></a>
+      <a class="nav-item"            data-section="mealsCard"    onclick="showSection('mealsCard')">    <span class="nav-icon">🍽️</span><span>Дневник питания</span></a>
+      <a class="nav-item"            data-section="reportCard"   onclick="showSection('reportCard')">   <span class="nav-icon">📈</span><span>Прогресс</span></a>
+      <a class="nav-item nav-coach"  data-section="coachCard"    onclick="showSection('coachCard')"    style="display:none;"><span class="nav-icon">👥</span><span>Группа</span></a>
+      <a class="nav-item nav-coach"  data-section="weightCard"   onclick="showSection('weightCard')"   style="display:none;"><span class="nav-icon">📊</span><span>Вес учеников</span></a>
+      <a class="nav-item nav-coach"  data-section="assignCard"   onclick="showSection('assignCard')"   style="display:none;"><span class="nav-icon">📝</span><span>Назначения</span></a>
+      <a class="nav-item"            data-section="workoutTrackerCard" onclick="showSection('workoutTrackerCard')"><span class="nav-icon">🏋️</span><span>Тренировки</span></a>
+      <a class="nav-item"            data-section="recipesCard"  onclick="showSection('recipesCard')">  <span class="nav-icon">📖</span><span>Рецепты</span></a>
+      <a class="nav-item"            data-section="calendarCard" onclick="showSection('calendarCard')"> <span class="nav-icon">📅</span><span>Календарь</span></a>
+      <a class="nav-item"            data-section="healthCard"   onclick="showSection('healthCard')">   <span class="nav-icon">❤️</span><span>Здоровье</span></a>
     </nav>
 
     <div class="sidebar-motivation">
@@ -298,6 +312,108 @@
         <ul class="group-list" id="groupList"></ul>
       </div>
 
+      <!-- КАЛЕНДАРЬ (для всех ролей) -->
+      <div class="card glass-tilt" id="calendarCard" style="display: none;">
+        <div class="card-header">
+          <div class="card-icon">📅</div>
+          <h2>Календарь</h2>
+        </div>
+        <div class="card-body">
+          <div class="calendar-toolbar">
+            <button class="btn-secondary cal-nav" onclick="calendarPrev()">‹</button>
+            <span id="calendarTitle" class="calendar-title">—</span>
+            <button class="btn-secondary cal-nav" onclick="calendarNext()">›</button>
+          </div>
+          <div class="calendar-grid-head">
+            <span>Пн</span><span>Вт</span><span>Ср</span><span>Чт</span><span>Пт</span><span>Сб</span><span>Вс</span>
+          </div>
+          <div class="calendar-grid" id="calendarGrid"></div>
+          <div class="calendar-legend">
+            <span><i class="dot dot-meal"></i> приём пищи</span>
+            <span><i class="dot dot-plan"></i> назначен план</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ВЕС УЧЕНИКОВ (тренер): график + экспорт -->
+      <div class="card glass-tilt" id="weightCard" style="display: none;">
+        <div class="card-header">
+          <div class="card-icon">📊</div>
+          <h2>Вес учеников</h2>
+        </div>
+        <div class="card-body">
+          <div class="action-row">
+            <div class="select-wrapper" style="flex:1;">
+              <select id="weightStudent" onchange="loadWeightChart()">
+                <option value="">— Выберите ученика —</option>
+              </select>
+            </div>
+            <button class="btn-secondary" onclick="exportWeightCSV()">⤓ CSV</button>
+            <button class="btn-secondary" onclick="exportWeightXLSX()">⤓ Excel</button>
+          </div>
+          <div class="chart-wrap">
+            <canvas id="weightChart"></canvas>
+          </div>
+          <div class="weight-stats" id="weightStats"></div>
+        </div>
+      </div>
+
+      <!-- НАЗНАЧЕНИЯ (тренер): план тренировок и план питания -->
+      <div class="card glass-tilt" id="assignCard" style="display: none;">
+        <div class="card-header">
+          <div class="card-icon">📝</div>
+          <h2>Назначения</h2>
+        </div>
+        <div class="card-body">
+          <div class="form-row">
+            <span class="form-label">Кому</span>
+            <div class="select-wrapper">
+              <select id="assignTarget">
+                <option value="">— Ученик или вся группа —</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <span class="form-label">Тип плана</span>
+            <div class="select-wrapper">
+              <select id="assignType">
+                <option value="workout">Тренировки</option>
+                <option value="meal">Питание</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <span class="form-label">Программа</span>
+            <div class="select-wrapper">
+              <select id="assignPlan"></select>
+            </div>
+          </div>
+          <div class="form-row">
+            <span class="form-label">Период</span>
+            <div class="input-row">
+              <div class="input-group" style="flex:1;"><input type="date" id="assignStart"></div>
+              <div class="input-group" style="flex:1;"><input type="date" id="assignEnd"></div>
+            </div>
+          </div>
+          <button class="btn-action" onclick="saveAssignment()">Назначить</button>
+          <h3 class="block-title">Активные назначения</h3>
+          <ul class="assign-list" id="assignList"></ul>
+        </div>
+      </div>
+
+      <!-- ДНЕВНИК ТРЕНИРОВОК: упражнения по группам мышц + подходы -->
+      <div class="card glass-tilt" id="workoutTrackerCard" style="display: none;">
+        <div class="card-header">
+          <div class="card-icon">🏋️</div>
+          <h2>Дневник тренировок</h2>
+        </div>
+        <div class="card-body">
+          <div class="mg-tabs" id="muscleGroupTabs"></div>
+          <div id="exerciseTracker" class="exercise-tracker"></div>
+          <button class="btn-secondary" onclick="clearWorkoutLog()" style="margin-top:12px;width:100%;font-size:12px;">🗑 Сбросить тренировку</button>
+        </div>
+      </div>
+
       <!-- РЕЦЕПТЫ -->
       <div class="card glass-tilt" id="recipesCard" style="display: none;">
         <div class="card-header">
@@ -339,12 +455,16 @@
   //  ПЕРЕКЛЮЧЕНИЕ РАЗДЕЛОВ ПРИЛОЖЕНИЯ
   // ============================================================
   const SECTION_TITLES = {
-    calcCard:    'Калькулятор',
-    mealsCard:   'Дневник питания',
-    reportCard:  'Прогресс',
-    healthCard:  'Здоровье',
-    coachCard:   'Группа',
-    recipesCard: 'Рецепты'
+    calcCard:            'Калькулятор',
+    mealsCard:           'Дневник питания',
+    reportCard:          'Прогресс',
+    coachCard:           'Группа',
+    weightCard:          'Вес учеников',
+    assignCard:          'Назначения',
+    workoutTrackerCard:  'Тренировки',
+    recipesCard:         'Рецепты',
+    calendarCard:        'Календарь',
+    healthCard:          'Здоровье'
   };
 
   function showSection(sectionId) {
@@ -367,8 +487,12 @@
         if (typeof renderProductsGrid    === 'function') renderProductsGrid();
       }, 50);
     }
-    if (sectionId === 'healthCard'  && typeof loadHealth === 'function')       loadHealth();
-    if (sectionId === 'coachCard'   && typeof loadCoachGroup === 'function')   loadCoachGroup();
+    if (sectionId === 'healthCard'          && typeof loadHealth         === 'function') loadHealth();
+    if (sectionId === 'coachCard'           && typeof loadCoachGroup     === 'function') loadCoachGroup();
+    if (sectionId === 'calendarCard'        && typeof renderCalendar     === 'function') renderCalendar();
+    if (sectionId === 'weightCard'          && typeof initWeightCard     === 'function') initWeightCard();
+    if (sectionId === 'assignCard'          && typeof initAssignCard     === 'function') initAssignCard();
+    if (sectionId === 'workoutTrackerCard'  && typeof initWorkoutTracker === 'function') initWorkoutTracker();
   }
 
   // ============================================================

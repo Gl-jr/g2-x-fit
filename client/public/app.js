@@ -278,10 +278,16 @@ function showApp() {
   document.getElementById("mainPage").classList.add("hidden");
   document.getElementById("appPage").classList.remove("hidden");
 
-  // Показываем вкладку "Группа" только тренерам
+  // Показываем вкладки тренера только тренерам
   const role = localStorage.getItem('role') || 'student';
-  const coachNav = document.querySelector('.nav-coach');
-  if (coachNav) coachNav.style.display = (role === 'coach') ? 'flex' : 'none';
+  document.querySelectorAll('.nav-coach').forEach(el => {
+    el.style.display = (role === 'coach') ? 'flex' : 'none';
+  });
+
+  // Обновляем никнейм в хэдере если есть
+  const nickname = localStorage.getItem('nickname');
+  const greeting = document.getElementById('pageTitle');
+  if (greeting && nickname) greeting.textContent = nickname;
 }
 
 function logout() {
@@ -293,53 +299,59 @@ function logout() {
 // 6. КАЛЬКУЛЯТОР БЖУ
 // ============================================================
 
+function renderNormResult(data) {
+  const goalText = data.goal === 'lose' ? 'Похудение' : data.goal === 'gain' ? 'Набор массы' : 'Поддержание';
+  const box = document.getElementById("bjuResult");
+  if (!box) return;
+  box.innerHTML = `
+    <div class="norm-goal-label">${data.goalMessage || goalText}</div>
+    <div class="norm-kpi-grid">
+      <div class="norm-kpi">
+        <span class="norm-kpi-val" style="color:var(--apple-orange);">${Math.round(data.calories)}</span>
+        <span class="norm-kpi-label">ккал</span>
+      </div>
+      <div class="norm-kpi">
+        <span class="norm-kpi-val" style="color:var(--apple-green);">${Math.round(data.protein)}</span>
+        <span class="norm-kpi-label">Белки г</span>
+      </div>
+      <div class="norm-kpi">
+        <span class="norm-kpi-val" style="color:var(--apple-orange);">${Math.round(data.fat)}</span>
+        <span class="norm-kpi-label">Жиры г</span>
+      </div>
+      <div class="norm-kpi">
+        <span class="norm-kpi-val" style="color:var(--accent);">${Math.round(data.carbs)}</span>
+        <span class="norm-kpi-label">Углеводы г</span>
+      </div>
+    </div>`;
+}
+
 async function loadUserNorm() {
   const res = await fetch(`http://localhost:3001/norm/${userId}`);
   const data = await res.json();
-  if (!data.error) {
-    let goalText = "";
-    if (data.goal === "lose") goalText = "Похудение 🔥";
-    else if (data.goal === "gain") goalText = "Набор массы 💪";
-    else goalText = "Поддержание ⚖️";
-    document.getElementById("bjuResult").innerHTML = `
-      <p><strong>📊 Ваша сохраненная норма:</strong></p>
-      <p>🎯 ${goalText}</p>
-      <p>🔥 Калории: <strong>${Math.round(data.calories)}</strong> ккал</p>
-      <p>🥩 Белки: <strong>${Math.round(data.protein)}</strong> г</p>
-      <p>🧈 Жиры: <strong>${Math.round(data.fat)}</strong> г</p>
-      <p>🍚 Углеводы: <strong>${Math.round(data.carbs)}</strong> г</p>
-      <small>⚡ Можно пересчитать заново</small>
-    `;
-  }
+  if (!data.error) renderNormResult(data);
 }
 
 async function calculateBJU() {
   const weight = document.getElementById("weight");
   const height = document.getElementById("height");
-  const age = document.getElementById("age");
-  const goal = document.getElementById("goal");
+  const age    = document.getElementById("age");
+  const goal   = document.getElementById("goal");
   if (!weight.value || !height.value || !age.value) { alert("Заполните все поля"); return; }
   if (weight.value < 15 || weight.value > 300) { alert("Вес должен быть от 15 до 300 кг"); return; }
   if (height.value < 50 || height.value > 250) { alert("Рост должен быть от 50 до 250 см"); return; }
-  if (age.value < 10 || age.value > 120) { alert("Возраст должен быть от 10 до 120 лет"); return; }
+  if (age.value < 10 || age.value > 120)       { alert("Возраст должен быть от 10 до 120 лет"); return; }
+
   const res = await fetch("http://localhost:3001/calculate", {
     method: "POST",
-    headers: {"Content-Type": "application/json"},
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       weight: +weight.value, height: +height.value, age: +age.value,
-      userId: userId, goal: goal.value
+      userId, goal: goal.value
     })
   });
   const data = await res.json();
   if (data.error) { alert(data.error); return; }
-  document.getElementById("bjuResult").innerHTML = `
-    <p><strong>📊 Ваша норма:</strong></p>
-    <p>${data.goalMessage}</p>
-    <p>🔥 Калории: <strong>${Math.round(data.calories)}</strong> ккал</p>
-    <p>🥩 Белки: <strong>${Math.round(data.protein)}</strong> г</p>
-    <p>🧈 Жиры: <strong>${Math.round(data.fat)}</strong> г</p>
-    <p>🍚 Углеводы: <strong>${Math.round(data.carbs)}</strong> г</p>
-  `;
+  renderNormResult(data);
 }
 
 // ============================================================
@@ -401,7 +413,7 @@ function renderMeals() {
     if (items.length) {
       html += `<details style="margin-bottom: 10px;"><summary style="font-weight: bold; cursor: pointer;">${mealNames[type]} (${items.length})</summary><div style="margin-left: 15px; margin-top: 5px;">`;
       items.forEach((item, idx) => {
-        html += `<div style="display: flex; justify-content: space-between; align-items: center; margin: 5px 0; padding: 5px; background: rgba(139,92,246,0.08); border-radius: 5px;">
+        html += `<div style="display: flex; justify-content: space-between; align-items: center; margin: 5px 0; padding: 5px; background: rgba(255,255,255,0.05); border-radius: 5px;">
           <span style="font-size:12px;">${item.amount} ${item.unit} ${item.name}<br>🥩${Math.round(item.protein)}г 🧈${Math.round(item.fat)}г 🍚${Math.round(item.carbs)}г</span>
           <button onclick="removeMealItem('${type}', ${idx})" style="width:auto; padding:2px 8px;">❌</button>
         </div>`;
@@ -409,7 +421,7 @@ function renderMeals() {
       });
       html += `</div></details>`;
     } else {
-      html += `<div style="margin-bottom:10px;"><strong>${mealNames[type]}</strong><br><span style="color:#666; font-size:12px;">Пусто</span></div>`;
+      html += `<div style="margin-bottom:10px;"><strong>${mealNames[type]}</strong><br><span style="color:#0000; font-size:12px;">Пусто</span></div>`;
     }
   }
   const calories = Math.round(totalProtein*4 + totalFat*9 + totalCarbs*4);
@@ -457,9 +469,9 @@ async function loadReport() {
       const fatOk = item.fat <= norm.fat*1.1 && item.fat >= norm.fat*0.9;
       const carbsOk = item.carbs <= norm.carbs*1.1 && item.carbs >= norm.carbs*0.9;
       isInNorm = proteinOk && fatOk && carbsOk;
-      statusHtml = isInNorm ? '<span style="color:#10b981;">✅ В норме</span>' : '<span style="color:#ef4444;">❌ Норма не достигнута</span>';
+      statusHtml = isInNorm ? '<span style="color:var(--apple-green);">✅ В норме</span>' : '<span style="color:var(--apple-red);">❌ Норма не достигнута</span>';
     }
-    reportHtml += `<div style="margin:10px 0; padding:12px; background:rgba(139,92,246,0.08); border-radius:12px; border-left:3px solid ${isInNorm ? '#10b981' : '#ef4444'};">
+    reportHtml += `<div style="margin:10px 0; padding:12px; background:rgba(255,255,255,0.05); border-radius:12px; border-left:3px solid ${isInNorm ? 'var(--apple-green)' : 'var(--apple-red)'};">
       <strong>📆 ${item.date}</strong> ${statusHtml}<br>
       🥩 Белки: ${Math.round(item.protein)} г ${!norm.error ? `(норма: ${Math.round(norm.protein)} г)` : ""}<br>
       🧈 Жиры: ${Math.round(item.fat)} г ${!norm.error ? `(норма: ${Math.round(norm.fat)} г)` : ""}<br>
@@ -480,7 +492,7 @@ async function loadStats() {
   if (stats.norm.goal === "lose") goalText = "Похудение 🔥";
   else if (stats.norm.goal === "gain") goalText = "Набор массы 💪";
   else goalText = "Поддержание ⚖️";
-  statsDiv.innerHTML = `<div style="margin-top:20px; padding:15px; background:rgba(139,92,246,0.1); border-radius:12px;">
+  statsDiv.innerHTML = `<div style="margin-top:20px; padding:15px; background:rgba(255,255,255,0.05); border-radius:12px;">
     <h4>📊 Ваша статистика:</h4><p>🎯 Текущая цель: <strong>${goalText}</strong></p>
     <p>🎯 Дневная норма:</p><p>🥩 Белки: <strong>${Math.round(stats.norm.protein)}</strong> г</p>
     <p>🧈 Жиры: <strong>${Math.round(stats.norm.fat)}</strong> г</p><p>🍚 Углеводы: <strong>${Math.round(stats.norm.carbs)}</strong> г</p><hr>
@@ -660,22 +672,22 @@ function switchRecipeTab(tab) {
   if (tab === 'mealplan') {
     mealPlanPanel.style.display = 'block';
     productsPanel.style.display = 'none';
-    tabMealPlan.style.background = 'var(--gradient-btn)';
+    tabMealPlan.style.background = 'var(--accent)';
     tabMealPlan.style.color = 'white';
     tabMealPlan.style.border = 'none';
     tabProducts.style.background = 'rgba(255,255,255,0.05)';
-    tabProducts.style.color = 'var(--text-dim)';
-    tabProducts.style.border = '1px solid var(--border)';
+    tabProducts.style.color = 'var(--text-secondary)';
+    tabProducts.style.border = '1px solid var(--glass-border)';
     renderMealPlanSection();
   } else {
     mealPlanPanel.style.display = 'none';
     productsPanel.style.display = 'block';
-    tabProducts.style.background = 'var(--gradient-btn)';
+    tabProducts.style.background = 'var(--accent)';
     tabProducts.style.color = 'white';
     tabProducts.style.border = 'none';
     tabMealPlan.style.background = 'rgba(255,255,255,0.05)';
-    tabMealPlan.style.color = 'var(--text-dim)';
-    tabMealPlan.style.border = '1px solid var(--border)';
+    tabMealPlan.style.color = 'var(--text-secondary)';
+    tabMealPlan.style.border = '1px solid var(--glass-border)';
   }
 }
 
@@ -683,27 +695,27 @@ function findRecipes() {
   const saved = JSON.parse(localStorage.getItem(`selectedProducts_${userId}`) || "[]");
   const container = document.getElementById("productsRecipesList");
   if (saved.length === 0) {
-    container.innerHTML = '<p style="text-align:center; color:var(--text-dim); padding:20px;">❌ Выберите хотя бы один продукт</p>';
+    container.innerHTML = '<p style="text-align:center; color:var(--text-secondary); padding:20px;">❌ Выберите хотя бы один продукт</p>';
     return;
   }
   const rankedRecipes = findRecipesByProducts(saved, recipes);
   const recipesWithMatches = rankedRecipes.filter(r => r.matchCount > 0);
   if (recipesWithMatches.length === 0) {
-    container.innerHTML = `<div style="text-align:center; color:var(--text-dim); padding:20px;">😴 Нет рецептов с выбранными продуктами<br><small>Попробуйте выбрать другие продукты</small></div>`;
+    container.innerHTML = `<div style="text-align:center; color:var(--text-secondary); padding:20px;">😴 Нет рецептов с выбранными продуктами<br><small>Попробуйте выбрать другие продукты</small></div>`;
     return;
   }
-  container.innerHTML = `<div style="margin-bottom:15px; padding:10px; background:rgba(139,92,246,0.1); border-radius:12px; text-align:center;">🎯 Найдено ${recipesWithMatches.length} рецептов из ${recipes.length}</div>
+  container.innerHTML = `<div style="margin-bottom:15px; padding:10px; background:rgba(255,255,255,0.05); border-radius:12px; text-align:center;">🎯 Найдено ${recipesWithMatches.length} рецептов из ${recipes.length}</div>
     ${recipesWithMatches.map(recipe => {
       const matchPercent = Math.round(recipe.matchPercentage);
-      let matchColor = matchPercent >= 80 ? '#10b981' : matchPercent >= 50 ? '#f59e0b' : '#ef4444';
+      let matchColor = matchPercent >= 80 ? 'var(--apple-green)' : matchPercent >= 50 ? 'var(--apple-orange)' : 'var(--apple-red)';
       return `<div class="recipe-card">
         <div class="recipe-header"><span class="recipe-name">${recipe.name}</span><span class="recipe-badge" style="background:${matchColor}20; color:${matchColor};">${recipe.matchCount}/${recipe.ingredients.length} продуктов</span></div>
-        <div class="recipe-match-bar"><div style="height:6px; background:rgba(255,255,255,0.1); border-radius:10px;"><div style="width:${matchPercent}%; height:100%; background:${matchColor}; border-radius:10px;"></div></div><div style="font-size:11px; margin-top:4px; color:var(--text-dim);">${matchPercent}% совпадение</div></div>
+        <div class="recipe-match-bar"><div style="height:6px; background:rgba(255,255,255,0.1); border-radius:10px;"><div style="width:${matchPercent}%; height:100%; background:${matchColor}; border-radius:10px;"></div></div><div style="font-size:11px; margin-top:4px; color:var(--text-secondary);">${matchPercent}% совпадение</div></div>
         <div class="recipe-ingredients">🥘 <strong>Ингредиенты:</strong> ${recipe.ingredients.join(', ')}</div>
         ${recipe.missingIngredients.length ? `<div class="recipe-missing">⚠️ Не хватает: ${recipe.missingIngredients.join(', ')}</div>` : `<div class="recipe-ready">✅ У вас есть все ингредиенты!</div>`}
         <div class="recipe-bju">🥩 ${recipe.bju.protein}г | 🧈 ${recipe.bju.fat}г | 🍚 ${recipe.bju.carbs}г | 🔥 ${recipe.bju.calories} ккал</div>
         <div class="recipe-instructions">📖 ${recipe.instructions}</div>
-        ${recipe.missingIngredients.length && recipe.missingIngredients.length <= 2 ? `<button onclick="suggestToBuy('${recipe.missingIngredients.join(', ')}')" style="margin-top:12px; width:100%; background:rgba(139,92,246,0.2); border:1px solid var(--border);">🛒 Докупить: ${recipe.missingIngredients.join(', ')}</button>` : ''}
+        ${recipe.missingIngredients.length && recipe.missingIngredients.length <= 2 ? `<button onclick="suggestToBuy('${recipe.missingIngredients.join(', ')}')" style="margin-top:12px; width:100%; background:rgba(255,255,255,0.05); border:1px solid var(--glass-border);">🛒 Докупить: ${recipe.missingIngredients.join(', ')}</button>` : ''}
       </div>`;
     }).join('')}`;
 }
@@ -771,7 +783,7 @@ function makeDays(baseMenu, count) {
 
 const FULL_MEAL_PLANS = {
   lose: {
-    name: "Рацион для похудения 🔥", calories: 1800, desc: "Дефицит 20%, ~1800 ккал/день", color: "#ef4444",
+    name: "Рацион для похудения 🔥", calories: 1800, desc: "Дефицит 20%, ~1800 ккал/день",
     baseMenu: [
       [ { type:"Завтрак", food:"Овсянка на воде 80г + 2 яйца всмятку", p:22, f:14, c:54, kcal:434 },
         { type:"Обед", food:"Куриная грудка 200г + гречка 80г + огурец", p:48, f:7, c:56, kcal:479 },
@@ -816,7 +828,7 @@ const FULL_MEAL_PLANS = {
     ]
   },
   gain: {
-    name: "Рацион для набора массы 💪", calories: 3200, desc: "Профицит 15%, ~3200 ккал/день", color: "#8b5cf6",
+    name: "Рацион для набора массы 💪", calories: 3200, desc: "Профицит 15%, ~3200 ккал/день",
     baseMenu: [
       [ { type:"Завтрак", food:"Овсянка 120г на молоке + 4 яйца + банан + мёд", p:40, f:22, c:110, kcal:794 },
         { type:"2-й завтрак", food:"Творог 5% 200г + орехи 30г + банан", p:28, f:18, c:36, kcal:418 },
@@ -851,7 +863,7 @@ const FULL_MEAL_PLANS = {
     ]
   },
   maintain: {
-    name: "Сбалансированное питание ⚖️", calories: 2500, desc: "Поддержание веса, ~2500 ккал/день", color: "#06b6d4",
+    name: "Сбалансированное питание ⚖️", calories: 2500, desc: "Поддержание веса, ~2500 ккал/день",
     baseMenu: [
       [ { type:"Завтрак", food:"Овсянка 100г на молоке + 2 яйца + фрукты", p:24, f:14, c:80, kcal:546 },
         { type:"Обед", food:"Куриная грудка 200г + рис 100г + овощи 200г", p:48, f:8, c:50, kcal:464 },
@@ -880,7 +892,7 @@ const FULL_MEAL_PLANS = {
     ]
   },
   keto: {
-    name: "Кето-диета 🥑", calories: 2000, desc: "Кетоз, <50г углеводов/день", color: "#10b981",
+    name: "Кето-диета 🥑", calories: 2000, desc: "Кетоз, <50г углеводов/день",
     baseMenu: [
       [ { type:"Завтрак", food:"4 яйца + бекон 60г + авокадо + кофе с маслом", p:32, f:52, c:4, kcal:608 },
         { type:"Обед", food:"Говядина 250г + брокколи с маслом + сыр 30г", p:52, f:38, c:8, kcal:584 },
@@ -909,7 +921,7 @@ const FULL_MEAL_PLANS = {
     ]
   },
   veg: {
-    name: "Вегетарианский рацион 🌱", calories: 2200, desc: "Без мяса, высокобелковый", color: "#f59e0b",
+    name: "Вегетарианский рацион 🌱", calories: 2200, desc: "Без мяса, высокобелковый",
     baseMenu: [
       [ { type:"Завтрак", food:"Овсянка 100г на молоке + орехи 30г + банан", p:18, f:14, c:90, kcal:562 },
         { type:"Обед", food:"Чечевица 200г + рис 80г + тушёные овощи 200г", p:24, f:4, c:72, kcal:420 },
@@ -1038,7 +1050,7 @@ function loadMainPageData() {
     newsContainer.innerHTML = todayNews.map(news => `
       <div class="news-item" onclick="window.open('${news.link}','_blank')" style="cursor:pointer;">
         <div class="news-title">${news.title}</div>
-        <div class="news-date">📅 ${today} · <span style="color:var(--cyan);">${news.src}</span> · Читать →</div>
+        <div class="news-date">📅 ${today} · <span style="color:var(--accent);">${news.src}</span> · Читать →</div>
       </div>`).join('');
   }
 
@@ -1047,8 +1059,8 @@ function loadMainPageData() {
   if (mealPlansContainer) {
     mealPlansContainer.innerHTML = Object.entries(FULL_MEAL_PLANS).map(([key, plan]) => `
       <div class="meal-plan-item" onclick="showFullMealPlan('${key}')" style="cursor:pointer; transition:all 0.2s;" onmouseover="this.style.paddingLeft='8px'" onmouseout="this.style.paddingLeft='0'">
-        <div class="meal-plan-name" style="color:${plan.color||'var(--cyan)'};">${plan.name}</div>
-        <div class="meal-plan-desc">${plan.desc} · 30 дней · <span style="color:var(--cyan);">Открыть →</span></div>
+        <div class="meal-plan-name" style="color:${plan.color||'var(--accent)'};">${plan.name}</div>
+        <div class="meal-plan-desc">${plan.desc} · 30 дней · <span style="color:var(--accent);">Открыть →</span></div>
       </div>`).join('');
   }
 
@@ -1069,7 +1081,7 @@ function loadMainPageData() {
       <div class="exercise-item" onclick="window.open('${ex.videoUrl}','_blank')" style="cursor:pointer;">
         <div class="exercise-name">🎥 ${ex.name}</div>
         <div class="exercise-desc">${ex.desc}</div>
-        <div style="font-size:10px; color:var(--purple); margin-top:3px;">▶ ${ex.channel} на YouTube</div>
+        <div style="font-size:10px; color:var(--text-secondary); margin-top:3px;">▶ ${ex.channel} на YouTube</div>
       </div>`).join('');
   }
 
@@ -1086,26 +1098,26 @@ function showFullMealPlan(key) {
   overlay.id = 'planModal';
   overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.88);z-index:2000;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(8px);';
   const box = document.createElement('div');
-  box.style.cssText = 'background:#0a0816;border:1px solid rgba(139,92,246,0.35);border-radius:24px;padding:28px 28px 28px;max-width:700px;width:92%;max-height:88vh;overflow-y:auto;position:relative;';
-  const color = rawPlan.color || '#06b6d4';
+  box.style.cssText = 'background:var(--bg-elevated, #000000);border:1px solid rgba(255,255,255,0.05);border-radius:24px;padding:28px 28px 28px;max-width:700px;width:92%;max-height:88vh;overflow-y:auto;position:relative;';
+  const color = rawPlan.color || 'var(--accent)';
   let html = `
-    <button onclick="document.getElementById('planModal').remove()" style="position:sticky;float:right;top:0;background:none;border:none;color:#94a3b8;font-size:26px;cursor:pointer;width:auto;padding:0;line-height:1;">✕</button>
-    <h2 style="font-family:'Orbitron',sans-serif;font-size:1.1rem;color:${color};margin-bottom:4px;">${plan.name}</h2>
-    <p style="color:#94a3b8;font-size:13px;margin-bottom:6px;">🔥 ~${plan.calories} ккал/день · ${plan.desc}</p>
-    <p style="color:#64748b;font-size:11px;margin-bottom:24px;">Рацион рассчитан на 30 дней. Принципы повторяются с вариациями каждые ${rawPlan.baseMenu.length} дней.</p>`;
+    <button onclick="document.getElementById('planModal').remove()" style="position:sticky;float:right;top:0;background:none;border:none;color:var(--text-secondary);font-size:26px;cursor:pointer;width:auto;padding:0;line-height:1;">✕</button>
+    <h2 style="font-family:"Inter",sans-serif;font-size:1.1rem;color:var(--accent);margin-bottom:4px;">${plan.name}</h2>
+    <p style="color:var(--text-secondary);font-size:13px;margin-bottom:6px;">🔥 ~${plan.calories} ккал/день · ${plan.desc}</p>
+    <p style="color:var(--text-tertiary);font-size:11px;margin-bottom:24px;">Рацион рассчитан на 30 дней. Принципы повторяются с вариациями каждые ${rawPlan.baseMenu.length} дней.</p>`;
   plan.days.forEach(day => {
     let dayP=0, dayF=0, dayC=0, dayK=0;
     day.meals.forEach(m => { dayP+=m.p; dayF+=m.f; dayC+=m.c; dayK+=m.kcal; });
     html += `<div style="margin-bottom:16px;border:1px solid rgba(255,255,255,0.05);border-radius:16px;overflow:hidden;">
-      <div style="background:rgba(${color==='#ef4444'?'239,68,68':color==='#8b5cf6'?'139,92,246':color==='#10b981'?'16,185,129':color==='#f59e0b'?'245,158,11':'6,182,212'},0.12);padding:10px 14px;display:flex;justify-content:space-between;align-items:center;">
-        <span style="font-family:'Orbitron',sans-serif;font-size:0.72rem;color:${color};letter-spacing:1px;">📅 ${day.day}</span>
-        <span style="font-size:11px;color:#64748b;">🔥 ${dayK} ккал · 🥩 ${dayP}г · 🧈 ${dayF}г · 🍚 ${dayC}г</span>
+      <div style="background:rgba(0, 0, 0, 0.04);padding:10px 14px;display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-family:'Inter',sans-serif;font-size:13px;color:var(--text-primary);font-weight:600;">📅 ${day.day}</span>
+        <span style="font-size:11px;color:var(--text-tertiary);">🔥 ${dayK} ккал · 🥩 ${dayP}г · 🧈 ${dayF}г · 🍚 ${dayC}г</span>
       </div>`;
     day.meals.forEach(m => {
-      html += `<div style="padding:10px 14px;border-top:1px solid rgba(255,255,255,0.04);">
-        <span style="font-size:11px;font-weight:700;color:${color};">${m.type}</span>
-        <div style="font-size:13px;color:#e2e8f0;margin:2px 0;">${m.food}</div>
-        <div style="font-size:11px;color:#64748b;">🥩 ${m.p}г · 🧈 ${m.f}г · 🍚 ${m.c}г · 🔥 ${m.kcal} ккал</div>
+      html += `<div style="padding:10px 14px;border-top:1px solid rgba(0, 0, 0, 0.04);">
+        <span style="font-size:11px;font-weight:700;color:var(--accent);">${m.type}</span>
+        <div style="font-size:13px;color:var(--text-primary);margin:2px 0;">${m.food}</div>
+        <div style="font-size:11px;color:var(--text-tertiary);">🥩 ${m.p}г · 🧈 ${m.f}г · 🍚 ${m.c}г · 🔥 ${m.kcal} ккал</div>
       </div>`;
     });
     html += `</div>`;
@@ -1126,30 +1138,30 @@ function showWorkoutPlan(key) {
   overlay.id = 'workoutModal';
   overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.88);z-index:2000;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(8px);';
   const box = document.createElement('div');
-  box.style.cssText = 'background:#0a0816;border:1px solid rgba(139,92,246,0.35);border-radius:24px;padding:28px;max-width:700px;width:92%;max-height:88vh;overflow-y:auto;position:relative;';
+  box.style.cssText = 'background:var(--bg-elevated, #0c0c0e);border:1px solid rgba(0, 0, 0, 0.05);border-radius:24px;padding:28px;max-width:700px;width:92%;max-height:88vh;overflow-y:auto;position:relative;';
   let html = `
-    <button onclick="document.getElementById('workoutModal').remove()" style="position:sticky;float:right;top:0;background:none;border:none;color:#94a3b8;font-size:26px;cursor:pointer;width:auto;padding:0;line-height:1;">✕</button>
-    <h2 style="font-family:'Orbitron',sans-serif;font-size:1.1rem;color:#06b6d4;margin-bottom:4px;">${plan.name}</h2>
-    <p style="color:#94a3b8;font-size:13px;margin-bottom:24px;">${plan.desc}</p>`;
+    <button onclick="document.getElementById('workoutModal').remove()" style="position:sticky;float:right;top:0;background:none;border:none;color:var(--text-secondary);font-size:26px;cursor:pointer;width:auto;padding:0;line-height:1;">✕</button>
+    <h2 style="font-family:"Inter",sans-serif;font-size:1.1rem;color:var(--accent);margin-bottom:4px;">${plan.name}</h2>
+    <p style="color:var(--text-secondary);font-size:13px;margin-bottom:24px;">${plan.desc}</p>`;
   // Кнопки переключения между типами
   html += `<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px;">`;
   Object.entries(WORKOUT_TYPES).forEach(([k, wt]) => {
     const active = k === key;
-    html += `<button onclick="showWorkoutPlan('${k}')" style="flex:1;min-width:100px;height:32px;border-radius:8px;border:1px solid ${active?'rgba(6,182,212,0.5)':'rgba(139,92,246,0.2)'};background:${active?'rgba(6,182,212,0.15)':'rgba(255,255,255,0.02)'};color:${active?'#06b6d4':'#94a3b8'};font-size:11px;cursor:pointer;">${wt.name.split(' ')[0]} ${wt.name.split(' ').slice(1).join(' ')}</button>`;
+    html += `<button onclick="showWorkoutPlan('${k}')" style="flex:1;min-width:100px;height:32px;border-radius:8px;border:1px solid ${active?'rgba(10,132,255,0.5)':'rgba(255,255,255,0.05)'};background:${active?'rgba(10,132,255,0.15)':'rgba(255,255,255,0.02)'};color:${active?'var(--accent)':'var(--text-secondary)'};font-size:11px;cursor:pointer;">${wt.name.split(' ')[0]} ${wt.name.split(' ').slice(1).join(' ')}</button>`;
   });
   html += `</div>`;
   plan.days.forEach(day => {
     html += `<div style="margin-bottom:16px;border:1px solid rgba(255,255,255,0.05);border-radius:16px;overflow:hidden;">
-      <div style="background:rgba(139,92,246,0.1);padding:10px 14px;">
-        <span style="font-family:'Orbitron',sans-serif;font-size:0.72rem;color:#8b5cf6;letter-spacing:1px;">🏋️ ${day.day}</span>
+      <div style="background:rgba(255,255,255,0.05);padding:10px 14px;">
+        <span style="font-family:"Inter",sans-serif;font-size:0.72rem;color:var(--accent);letter-spacing:1px;">🏋️ ${day.day}</span>
       </div>`;
     day.exercises.forEach((ex, i) => {
-      html += `<div style="padding:10px 14px;border-top:1px solid rgba(255,255,255,0.04);display:flex;justify-content:space-between;align-items:flex-start;">
+      html += `<div style="padding:10px 14px;border-top:1px solid rgba(0, 0, 0, 0.04);display:flex;justify-content:space-between;align-items:flex-start;">
         <div>
           <div style="font-weight:700;font-size:13px;margin-bottom:3px;">${i+1}. ${ex.name}</div>
-          <div style="font-size:12px;color:#94a3b8;">💡 ${ex.tip}</div>
+          <div style="font-size:12px;color:var(--text-secondary);">💡 ${ex.tip}</div>
         </div>
-        <span style="font-size:11px;background:rgba(6,182,212,0.15);color:#06b6d4;padding:3px 10px;border-radius:20px;white-space:nowrap;margin-left:10px;">${ex.sets}</span>
+        <span style="font-size:11px;background:rgba(10,132,255,0.15);color:var(--accent);padding:3px 10px;border-radius:20px;white-space:nowrap;margin-left:10px;">${ex.sets}</span>
       </div>`;
     });
     html += `</div>`;
@@ -1169,15 +1181,15 @@ function showAllExercises() {
   overlay.id = 'techModal';
   overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.88);z-index:2000;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(8px);';
   const box = document.createElement('div');
-  box.style.cssText = 'background:#0a0816;border:1px solid rgba(139,92,246,0.35);border-radius:24px;padding:28px;max-width:680px;width:92%;max-height:88vh;overflow-y:auto;position:relative;';
-  let html = `<button onclick="document.getElementById('techModal').remove()" style="position:sticky;float:right;top:0;background:none;border:none;color:#94a3b8;font-size:26px;cursor:pointer;width:auto;padding:0;">✕</button>
-    <h2 style="font-family:'Orbitron',sans-serif;font-size:1.1rem;color:#06b6d4;margin-bottom:4px;">🎥 Правильная техника</h2>
-    <p style="color:#94a3b8;font-size:13px;margin-bottom:20px;">Видео от русскоязычных тренеров: Денис Борисов, AtletIQ, Алексей Шреддер</p>`;
+  box.style.cssText = 'background:var(--bg-elevated, #0c0c0e);border:1px solid rgba(2, 2, 2, 0.05);border-radius:24px;padding:28px;max-width:680px;width:92%;max-height:88vh;overflow-y:auto;position:relative;';
+  let html = `<button onclick="document.getElementById('techModal').remove()" style="position:sticky;float:right;top:0;background:none;border:none;color:var(--text-secondary);font-size:26px;cursor:pointer;width:auto;padding:0;">✕</button>
+    <h2 style="font-family:"Inter",sans-serif;font-size:1.1rem;color:var(--accent);margin-bottom:4px;">🎥 Правильная техника</h2>
+    <p style="color:var(--text-secondary);font-size:13px;margin-bottom:20px;">Видео от русскоязычных тренеров: Денис Борисов, AtletIQ, Алексей Шреддер</p>`;
   exercisesData.forEach(ex => {
-    html += `<div style="margin-bottom:8px;padding:12px 14px;background:rgba(139,92,246,0.06);border-radius:12px;border-left:3px solid rgba(6,182,212,0.4);cursor:pointer;" onclick="window.open('${ex.videoUrl}','_blank')">
+    html += `<div style="margin-bottom:8px;padding:12px 14px;background:rgba(255,255,255,0.05);border-radius:12px;border-left:3px solid rgba(10,132,255,0.4);cursor:pointer;" onclick="window.open('${ex.videoUrl}','_blank')">
       <div style="font-weight:700;font-size:13px;margin-bottom:3px;">🎥 ${ex.name}</div>
-      <div style="font-size:12px;color:#e2e8f0;margin-bottom:4px;">${ex.desc}</div>
-      <div style="font-size:11px;color:#8b5cf6;">▶ ${ex.channel} · Смотреть на YouTube →</div>
+      <div style="font-size:12px;color:var(--text-primary);margin-bottom:4px;">${ex.desc}</div>
+      <div style="font-size:11px;color:var(--accent);">▶ ${ex.channel} · Смотреть на YouTube →</div>
     </div>`;
   });
   box.innerHTML = html;
@@ -1275,29 +1287,29 @@ function renderMealPlanSection() {
     "🥚 Варёные яйца с овощами": ["Свари 2 яйца: 8 мин для вкрутую", "Охлади в холодной воде, очисти", "Нарежь яйца и свежие овощи", "Посоли, по желанию — немного горчицы"],
   };
 
-  let html = `<div style="margin-bottom:20px; padding:14px; background:rgba(6,182,212,0.1); border:1px solid rgba(6,182,212,0.2); border-radius:16px; text-align:center;">
+  let html = `<div style="margin-bottom:20px; padding:14px; background:rgba(10,132,255,0.1); border:1px solid rgba(10,132,255,0.2); border-radius:16px; text-align:center;">
     📅 Варианты на сегодня — <strong>${new Date().toLocaleDateString('ru-RU', {weekday:'long', day:'numeric', month:'long'})}</strong><br>
-    <small style="color:var(--text-dim)">Варианты меняются каждый день</small>
+    <small style="color:var(--text-secondary)">Варианты меняются каждый день</small>
   </div>`;
 
   for (const [mealType, meals] of Object.entries(plan)) {
     html += `<div style="margin-bottom:28px;">
-      <h3 style="font-family:'Orbitron',sans-serif; font-size:0.85rem; color:var(--cyan); margin-bottom:12px; letter-spacing:1px;">${mealLabels[mealType]}</h3>
+      <h3 style="font-family:"Inter",sans-serif; font-size:0.85rem; color:var(--accent); margin-bottom:12px; letter-spacing:1px;">${mealLabels[mealType]}</h3>
       <div style="display:flex; flex-direction:column; gap:12px;">
         ${meals.map((meal, idx) => {
           const steps = cookingSteps[meal.name] || [meal.recipe];
-          const stepsHtml = steps.map((s, i) => `<div style="display:flex;gap:8px;margin-bottom:4px;"><span style="color:var(--cyan);font-weight:700;min-width:18px;">${i+1}.</span><span style="font-size:12px;color:#e2e8f0;">${s}</span></div>`).join('');
+          const stepsHtml = steps.map((s, i) => `<div style="display:flex;gap:8px;margin-bottom:4px;"><span style="color:var(--accent);font-weight:700;min-width:18px;">${i+1}.</span><span style="font-size:12px;color:var(--text-primary);">${s}</span></div>`).join('');
           return `<div class="recipe-card" style="cursor:default;">
             <div class="recipe-header">
               <span class="recipe-name" style="font-size:14px;">${meal.name}</span>
-              <span class="recipe-badge" style="background:rgba(6,182,212,0.15); color:var(--cyan);">Вариант ${idx+1}</span>
+              <span class="recipe-badge" style="background:rgba(10,132,255,0.15); color:var(--accent);">Вариант ${idx+1}</span>
             </div>
             <div class="recipe-bju" style="margin:8px 0;">🥩 ${meal.protein}г | 🧈 ${meal.fat}г | 🍚 ${meal.carbs}г | 🔥 ${meal.calories} ккал</div>
-            <div style="margin:10px 0 4px; font-size:11px; font-weight:700; color:var(--purple); letter-spacing:0.5px;">📋 КАК ПРИГОТОВИТЬ:</div>
+            <div style="margin:10px 0 4px; font-size:11px; font-weight:700; color:var(--text-secondary); letter-spacing:0.5px;">📋 КАК ПРИГОТОВИТЬ:</div>
             <div style="background:rgba(0,0,0,0.2); border-radius:10px; padding:10px 12px; margin-bottom:10px;">
               ${stepsHtml}
             </div>
-            <button onclick="addMealPlanToRation('${mealType}', ${idx})" style="width:100%; background:rgba(139,92,246,0.15); border:1px solid var(--border); height:36px; border-radius:10px; font-size:12px; cursor:pointer; color:var(--text);">➕ Добавить в рацион</button>
+            <button onclick="addMealPlanToRation('${mealType}', ${idx})" style="width:100%; background:rgba(255,255,255,0.05); border:1px solid var(--glass-border); height:36px; border-radius:10px; font-size:12px; cursor:pointer; color:var(--text);">➕ Добавить в рацион</button>
           </div>`;
         }).join('')}
       </div>
@@ -1318,8 +1330,8 @@ function addMealPlanToRation(mealType, idx) {
   // Визуальный фидбэк
   const btn = event.target;
   btn.textContent = "✅ Добавлено!";
-  btn.style.background = "rgba(16,185,129,0.2)";
-  btn.style.borderColor = "#10b981";
+  btn.style.background = "rgba(48,209,88,0.2)";
+  btn.style.borderColor = "var(--apple-green)";
   btn.disabled = true;
 }
 
@@ -1337,8 +1349,8 @@ async function registerFromModal() {
   const email    = document.getElementById("modalEmail").value.trim();
   const password = document.getElementById("modalPassword").value;
   const nickname = document.getElementById("modalNickname")?.value.trim() || "";
-  const tag      = document.getElementById("modalTag")?.value.trim()      || "";
-  const role     = document.getElementById("modalRole")?.value             || "student";
+  const role     = document.querySelector('input[name="modalRole"]:checked')?.value || "student";
+  const tag      = "";
 
   if (!email)    { alert("Введите email"); return; }
   if (!password) { alert("Введите пароль"); return; }
@@ -1612,4 +1624,417 @@ async function loadCoachGroup() {
       </li>
     `;
   }).join('');
+}
+
+// ============================================================
+//  18. КАЛЕНДАРЬ (доступен всем ролям)
+// ============================================================
+
+let calendarDate = new Date();
+
+function renderCalendar() {
+  const title = document.getElementById('calendarTitle');
+  const grid  = document.getElementById('calendarGrid');
+  if (!title || !grid) return;
+
+  const year  = calendarDate.getFullYear();
+  const month = calendarDate.getMonth();
+
+  title.textContent = calendarDate.toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' });
+
+  const firstDay  = new Date(year, month, 1);
+  const totalDays = new Date(year, month + 1, 0).getDate();
+  const today     = new Date().toISOString().split('T')[0];
+
+  // Понедельник = 0
+  let startDOW = firstDay.getDay() - 1;
+  if (startDOW < 0) startDOW = 6;
+
+  let cells = '';
+  for (let i = 0; i < startDOW; i++) cells += '<div class="cal-cell empty"></div>';
+
+  for (let d = 1; d <= totalDays; d++) {
+    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    const isToday = dateStr === today;
+    const hasMeals = userId && !!localStorage.getItem(`meals_${userId}_${dateStr}`);
+
+    cells += `
+      <div class="cal-cell${isToday ? ' cal-today' : ''}">
+        <span>${d}</span>
+        <div class="cal-dots">${hasMeals ? '<i class="dot dot-meal"></i>' : ''}</div>
+      </div>`;
+  }
+
+  grid.innerHTML = cells;
+}
+
+function calendarPrev() {
+  calendarDate.setMonth(calendarDate.getMonth() - 1);
+  renderCalendar();
+}
+
+function calendarNext() {
+  calendarDate.setMonth(calendarDate.getMonth() + 1);
+  renderCalendar();
+}
+
+// ============================================================
+//  19. ГРАФИК ВЕСА УЧЕНИКОВ (только для тренера)
+// ============================================================
+
+let weightChartInstance = null;
+
+async function initWeightCard() {
+  // Заполняем список учеников из группы тренера
+  const sel = document.getElementById('weightStudent');
+  if (!sel) return;
+  const res = await fetch(`http://localhost:3001/group/${userId}`);
+  const data = await res.json();
+  sel.innerHTML = '<option value="">— Выберите ученика —</option>' +
+    data.students.map(s => `<option value="${s.id}">${s.nickname || s.email}</option>`).join('');
+}
+
+async function loadWeightChart() {
+  const sel = document.getElementById('weightStudent');
+  const studentId = sel?.value;
+  const statsDiv  = document.getElementById('weightStats');
+
+  if (!studentId) {
+    if (statsDiv) statsDiv.innerHTML = '';
+    return;
+  }
+
+  const res  = await fetch(`http://localhost:3001/weights/${studentId}`);
+  const rows = await res.json();
+
+  if (!rows.length) {
+    if (statsDiv) statsDiv.innerHTML = '<p style="color:var(--text-secondary);text-align:center;padding:20px;">Нет данных о весе</p>';
+    if (weightChartInstance) { weightChartInstance.destroy(); weightChartInstance = null; }
+    return;
+  }
+
+  const labels = rows.map(r => r.date);
+  const values = rows.map(r => r.kg);
+  const min    = Math.min(...values);
+  const max    = Math.max(...values);
+  const last   = values[values.length - 1];
+  const diff   = (last - values[0]).toFixed(1);
+
+  if (statsDiv) {
+    statsDiv.innerHTML = `
+      <div class="weight-kpi-row">
+        <div class="kpi"><span class="kpi-label">Текущий</span><span class="kpi-value">${last} кг</span></div>
+        <div class="kpi"><span class="kpi-label">Мин</span><span class="kpi-value">${min} кг</span></div>
+        <div class="kpi"><span class="kpi-label">Макс</span><span class="kpi-value">${max} кг</span></div>
+        <div class="kpi"><span class="kpi-label">Изменение</span>
+          <span class="kpi-value" style="color:${diff > 0 ? 'var(--apple-red)' : 'var(--apple-green)'}">${diff > 0 ? '+' : ''}${diff} кг</span></div>
+      </div>`;
+  }
+
+  const ctx = document.getElementById('weightChart')?.getContext('2d');
+  if (!ctx) return;
+  if (weightChartInstance) weightChartInstance.destroy();
+
+  weightChartInstance = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Вес (кг)',
+        data: values,
+        borderColor: 'rgba(10,132,255,0.9)',
+        backgroundColor: 'rgba(10,132,255,0.08)',
+        fill: true,
+        tension: 0.4,
+        pointBackgroundColor: '#0A84FF',
+        pointRadius: 4,
+        pointHoverRadius: 6,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: 'rgba(28,28,30,0.95)',
+          titleColor: '#fff',
+          bodyColor: '#8e8e93',
+          padding: 12,
+          cornerRadius: 10,
+        }
+      },
+      scales: {
+        x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#8e8e93', maxTicksLimit: 8 } },
+        y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#8e8e93' } }
+      }
+    }
+  });
+}
+
+async function _fetchWeightRows() {
+  const sel = document.getElementById('weightStudent');
+  const studentId = sel?.value;
+  if (!studentId) { alert('Выберите ученика'); return null; }
+  const res = await fetch(`http://localhost:3001/weights/${studentId}`);
+  return await res.json();
+}
+
+async function exportWeightCSV() {
+  const rows = await _fetchWeightRows();
+  if (!rows || !rows.length) { alert('Нет данных'); return; }
+  const csv = ['Дата;Вес (кг)', ...rows.map(r => `"${r.date}";"${r.kg}"`)].join('\r\n');
+  downloadBlob(new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' }), `weight_${Date.now()}.csv`);
+}
+
+async function exportWeightXLSX() {
+  if (typeof XLSX === 'undefined') { alert('Библиотека Excel не загружена'); return; }
+  const rows = await _fetchWeightRows();
+  if (!rows || !rows.length) { alert('Нет данных'); return; }
+  const ws = XLSX.utils.aoa_to_sheet([['Дата', 'Вес (кг)'], ...rows.map(r => [r.date, r.kg])]);
+  ws['!cols'] = [{ wch: 14 }, { wch: 12 }];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Вес');
+  XLSX.writeFile(wb, `weight_${Date.now()}.xlsx`);
+}
+
+// ============================================================
+//  20. НАЗНАЧЕНИЯ: ТРЕНИРОВКИ И ПИТАНИЕ (для тренера)
+// ============================================================
+
+function initAssignCard() {
+  populateAssignTarget();
+  populateAssignPlan();
+  loadAssignments();
+  document.getElementById('assignType')?.addEventListener('change', populateAssignPlan);
+}
+
+async function populateAssignTarget() {
+  const sel = document.getElementById('assignTarget');
+  if (!sel) return;
+  const res  = await fetch(`http://localhost:3001/group/${userId}`);
+  const data = await res.json();
+  sel.innerHTML = '<option value="">— Вся группа —</option>' +
+    data.students.map(s => `<option value="${s.id}">${s.nickname || s.email}</option>`).join('');
+}
+
+function populateAssignPlan() {
+  const type = document.getElementById('assignType')?.value || 'workout';
+  const sel  = document.getElementById('assignPlan');
+  if (!sel) return;
+  if (type === 'workout') {
+    sel.innerHTML = Object.entries(WORKOUT_TYPES)
+      .map(([k, wt]) => `<option value="${k}">${wt.name}</option>`).join('');
+  } else {
+    sel.innerHTML = Object.entries(FULL_MEAL_PLANS)
+      .map(([k, mp]) => `<option value="${k}">${mp.name}</option>`).join('');
+  }
+}
+
+async function saveAssignment() {
+  const target  = document.getElementById('assignTarget')?.value;
+  const type    = document.getElementById('assignType')?.value;
+  const planKey = document.getElementById('assignPlan')?.value;
+  const startDate = document.getElementById('assignStart')?.value;
+  const endDate   = document.getElementById('assignEnd')?.value;
+
+  const res  = await fetch('http://localhost:3001/assignments', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ coachId: userId, studentId: target || null, type, planKey, startDate, endDate })
+  });
+  const data = await res.json();
+  if (data.error) { alert(data.error); return; }
+  loadAssignments();
+}
+
+async function loadAssignments() {
+  const res  = await fetch(`http://localhost:3001/assignments?coachId=${userId}`);
+  const rows = await res.json();
+  const list = document.getElementById('assignList');
+  if (!list) return;
+
+  if (!rows.length) {
+    list.innerHTML = '<li class="tag-empty">Назначений нет</li>';
+    return;
+  }
+
+  const planLabel = (type, key) => {
+    if (type === 'workout') return WORKOUT_TYPES[key]?.name || key;
+    return FULL_MEAL_PLANS[key]?.name || key;
+  };
+
+  list.innerHTML = rows.map(a => {
+    const typeName = a.type === 'workout' ? '💪 Тренировки' : '🥗 Питание';
+    const target   = a.student_name || a.student_email || '👥 Вся группа';
+    const period   = a.start_date ? `${a.start_date} — ${a.end_date || '∞'}` : 'Без ограничений';
+    return `<li class="student-row">
+      <div class="student-info">
+        <strong>${typeName}: ${planLabel(a.type, a.plan_key)}</strong>
+        <small>${target} · ${period}</small>
+      </div>
+      <button class="btn-secondary" onclick="deleteAssignment(${a.id})">Удалить</button>
+    </li>`;
+  }).join('');
+}
+
+async function deleteAssignment(id) {
+  await fetch(`http://localhost:3001/assignments/${id}`, { method: 'DELETE' });
+  loadAssignments();
+}
+
+// ============================================================
+//  21. ДНЕВНИК ТРЕНИРОВОК (трекер по группам мышц)
+// ============================================================
+
+const MUSCLE_GROUPS = {
+  chest:     { name: 'Грудь',      icon: '🫁', exercises: ['Жим штанги лёжа','Жим гантелей лёжа','Разводка гантелей','Отжимания на брусьях','Кроссовер на блоке'] },
+  back:      { name: 'Спина',      icon: '🦴', exercises: ['Становая тяга','Подтягивания','Тяга штанги в наклоне','Тяга верхнего блока','Тяга гантели одной рукой'] },
+  legs:      { name: 'Ноги',       icon: '🦵', exercises: ['Приседания со штангой','Жим ногами','Выпады с гантелями','Сгибание ног лёжа','Подъёмы на икры'] },
+  shoulders: { name: 'Плечи',      icon: '💪', exercises: ['Жим штанги стоя','Махи гантелями в стороны','Тяга к подбородку','Жим Арнольда','Обратные разводки'] },
+  arms:      { name: 'Руки',       icon: '🤸', exercises: ['Подъём штанги на бицепс','Молотки с гантелями','Французский жим','Разгибания на блоке','Концентрированные сгибания'] },
+  core:      { name: 'Пресс / Кор',icon: '🔥', exercises: ['Планка','Скручивания','Подъём ног лёжа','Русский твист','Ролик для пресса'] }
+};
+
+let activeMusclGroup = 'chest';
+// Хранилище подходов: { [muscle]: { [exercise]: [{kg, reps, note}] } }
+let workoutLog = {};
+
+function loadWorkoutLog() {
+  try {
+    workoutLog = JSON.parse(localStorage.getItem(`workoutLog_${userId}`) || '{}');
+  } catch { workoutLog = {}; }
+}
+
+function saveWorkoutLog() {
+  localStorage.setItem(`workoutLog_${userId}`, JSON.stringify(workoutLog));
+}
+
+function initWorkoutTracker() {
+  loadWorkoutLog();
+  renderMuscleGroupTabs();
+  renderExerciseList();
+}
+
+function renderMuscleGroupTabs() {
+  const tabs = document.getElementById('muscleGroupTabs');
+  if (!tabs) return;
+  tabs.innerHTML = Object.entries(MUSCLE_GROUPS).map(([key, g]) => `
+    <button class="mg-tab${key === activeMusclGroup ? ' active' : ''}" onclick="selectMuscleGroup('${key}')">
+      <span>${g.icon}</span>
+      <span>${g.name}</span>
+    </button>
+  `).join('');
+}
+
+function selectMuscleGroup(key) {
+  activeMusclGroup = key;
+  renderMuscleGroupTabs();
+  renderExerciseList();
+}
+
+function renderExerciseList() {
+  const container = document.getElementById('exerciseTracker');
+  if (!container) return;
+  const group = MUSCLE_GROUPS[activeMusclGroup];
+  if (!workoutLog[activeMusclGroup]) workoutLog[activeMusclGroup] = {};
+
+  container.innerHTML = group.exercises.map(name => {
+    const safeKey  = name.replace(/['"]/g, '');
+    const sets     = workoutLog[activeMusclGroup][name] || [];
+    const setsHtml = sets.map((s, i) => `
+      <div class="workout-set">
+        <span class="set-num">${i + 1}</span>
+        <span class="set-data">${s.kg} кг × ${s.reps} повт.</span>
+        ${s.note ? `<span class="set-note">${s.note}</span>` : ''}
+        <button class="set-del" onclick="removeSet('${activeMusclGroup}','${safeKey}',${i})" title="Удалить">✕</button>
+      </div>`).join('');
+
+    return `
+      <div class="exercise-block">
+        <div class="exercise-block-header">
+          <span class="exercise-block-name">${name}</span>
+          <span class="exercise-block-count">${sets.length} подх.</span>
+        </div>
+        ${setsHtml ? `<div class="sets-list">${setsHtml}</div>` : ''}
+        <div class="add-set-row">
+          <input type="number" class="set-input" id="kg_${safeKey.replace(/\s/g,'_')}" placeholder="кг" min="0" step="0.5">
+          <input type="number" class="set-input" id="reps_${safeKey.replace(/\s/g,'_')}" placeholder="повт" min="1">
+          <input type="text"   class="set-input set-note-input" id="note_${safeKey.replace(/\s/g,'_')}" placeholder="заметка">
+          <button class="btn-secondary" onclick="addSet('${activeMusclGroup}','${safeKey}')">＋</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function addSet(muscle, exerciseName) {
+  const safeId = exerciseName.replace(/\s/g, '_');
+  const kg     = parseFloat(document.getElementById(`kg_${safeId}`)?.value)   || 0;
+  const reps   = parseInt(document.getElementById(`reps_${safeId}`)?.value)   || 0;
+  const note   = document.getElementById(`note_${safeId}`)?.value.trim()       || '';
+
+  if (!workoutLog[muscle]) workoutLog[muscle] = {};
+  if (!workoutLog[muscle][exerciseName]) workoutLog[muscle][exerciseName] = [];
+  workoutLog[muscle][exerciseName].push({ kg, reps, note });
+  saveWorkoutLog();
+  renderExerciseList();
+}
+
+function removeSet(muscle, exerciseName, idx) {
+  workoutLog[muscle]?.[exerciseName]?.splice(idx, 1);
+  saveWorkoutLog();
+  renderExerciseList();
+}
+
+// Сброс дневника на сегодня (новая тренировка)
+function clearWorkoutLog() {
+  if (!confirm('Очистить дневник тренировки?')) return;
+  workoutLog = {};
+  saveWorkoutLog();
+  renderExerciseList();
+}
+
+// ============================================================
+//  22. ВСПОМОГАТЕЛЬНЫЕ (главная страница)
+// ============================================================
+
+function showAllMealPlans() {
+  // Показываем все программы питания в модале
+  const keys = Object.keys(FULL_MEAL_PLANS);
+  if (!keys.length) return;
+  showFullMealPlan(keys[0]); // откроет модал, пользователь листает вручную
+}
+
+function showAllExercises() {
+  // Показываем все видео по технике
+  const existing = document.getElementById('exercisesModal');
+  if (existing) existing.remove();
+
+  const overlay = document.createElement('div');
+  overlay.id = 'exercisesModal';
+  overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:2000;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(16px);';
+
+  const box = document.createElement('div');
+  box.style.cssText = 'background:#1c1c1e;border:1px solid rgba(255,255,255,0.08);border-radius:28px;padding:28px;max-width:680px;width:92%;max-height:88vh;overflow-y:auto;position:relative;';
+
+  let html = `
+    <button onclick="document.getElementById('exercisesModal').remove()" style="position:absolute;right:20px;top:20px;background:rgba(255,255,255,0.07);border:none;color:#fff;font-size:18px;cursor:pointer;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;">✕</button>
+    <h2 style="font-size:1.3rem;font-weight:700;color:#fff;margin-bottom:20px;letter-spacing:-0.5px;">🎬 Видеоуроки по технике</h2>`;
+
+  exercisesData.forEach(ex => {
+    html += `
+      <div onclick="window.open('${ex.videoUrl}','_blank')" style="display:flex;align-items:center;gap:14px;padding:14px 16px;margin-bottom:10px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:16px;cursor:pointer;">
+        <div style="width:40px;height:40px;background:rgba(10,132,255,0.15);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">▶</div>
+        <div>
+          <div style="font-weight:600;font-size:14px;color:#fff;margin-bottom:2px;">${ex.name}</div>
+          <div style="font-size:12px;color:#8e8e93;">${ex.desc}</div>
+          <div style="font-size:11px;color:#0A84FF;margin-top:2px;">${ex.channel} · YouTube</div>
+        </div>
+      </div>`;
+  });
+
+  box.innerHTML = html;
+  overlay.appendChild(box);
+  overlay.onclick = e => { if (e.target === overlay) overlay.remove(); };
+  document.body.appendChild(overlay);
 }
