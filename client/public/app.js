@@ -326,7 +326,7 @@ function renderNormResult(data) {
 }
 
 async function loadUserNorm() {
-  const res = await fetch(`http://localhost:3001/norm/${userId}`);
+  const res = await fetch(`/norm/${userId}`);
   const data = await res.json();
   if (!data.error) renderNormResult(data);
 }
@@ -341,7 +341,7 @@ async function calculateBJU() {
   if (height.value < 50 || height.value > 250) { alert("Рост должен быть от 50 до 250 см"); return; }
   if (age.value < 10 || age.value > 120)       { alert("Возраст должен быть от 10 до 120 лет"); return; }
 
-  const res = await fetch("http://localhost:3001/calculate", {
+  const res = await fetch("/calculate", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -437,7 +437,7 @@ async function saveDailyToServer() {
     for (const item of items) {
       totalProtein += item.protein; totalFat += item.fat; totalCarbs += item.carbs;
     }
-  const res = await fetch("http://localhost:3001/food", {
+  const res = await fetch("/food", {
     method: "POST", headers: {"Content-Type": "application/json"},
     body: JSON.stringify({ userId, date: selectedDate, protein: Math.round(totalProtein), fat: Math.round(totalFat), carbs: Math.round(totalCarbs) })
   });
@@ -453,13 +453,13 @@ async function saveDailyToServer() {
 async function loadReport() {
   const startDate = document.getElementById("startDate").value;
   const endDate = document.getElementById("endDate").value;
-  let url = `http://localhost:3001/report/${userId}`;
+  let url = `/report/${userId}`;
   if (startDate && endDate) url += `?startDate=${startDate}&endDate=${endDate}`;
   const res = await fetch(url);
   const data = await res.json();
   const reportDiv = document.getElementById("report");
   if (data.length === 0) { reportDiv.innerHTML = "<p>😴 Нет данных за выбранный период</p>"; return; }
-  const normRes = await fetch(`http://localhost:3001/norm/${userId}`);
+  const normRes = await fetch(`/norm/${userId}`);
   const norm = await normRes.json();
   let reportHtml = `<h3>📅 Отчет за период</h3>`;
   for (const item of data) {
@@ -483,7 +483,7 @@ async function loadReport() {
 }
 
 async function loadStats() {
-  const res = await fetch(`http://localhost:3001/stats/${userId}`);
+  const res = await fetch(`/stats/${userId}`);
   const stats = await res.json();
   if (stats.error) return;
   const statsDiv = document.getElementById("stats");
@@ -1331,7 +1331,7 @@ async function registerFromModal() {
   if (!password) { alert("Введите пароль"); return; }
 
   try {
-    const res = await fetch("http://localhost:3001/register", {
+    const res = await fetch("/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password, nickname, tag, role })
@@ -1365,7 +1365,7 @@ async function loginFromModal() {
   if (!password) { alert("Введите пароль"); return; }
 
   try {
-    const res = await fetch("http://localhost:3001/login", {
+    const res = await fetch("/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password })
@@ -1397,7 +1397,7 @@ function closeAuthModal() { document.getElementById('authModal')?.classList.add(
 async function forgotPassword() {
   const email = prompt("Введите email для восстановления пароля:");
   if (!email) return;
-  const res = await fetch("http://localhost:3001/forgot-password", {
+  const res = await fetch("/forgot-password", {
     method: "POST", headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email })
   });
@@ -1407,7 +1407,7 @@ async function forgotPassword() {
   if (!code) return;
   const newPassword = prompt("Новый пароль:");
   if (!newPassword) return;
-  const res2 = await fetch("http://localhost:3001/reset-password", {
+  const res2 = await fetch("/reset-password", {
     method: "POST", headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, code, newPassword })
   });
@@ -1423,13 +1423,13 @@ async function loadHealth() {
   if (!userId) return;
 
   // Загружаем аллергии / травмы
-  const res  = await fetch(`http://localhost:3001/health/${userId}`);
+  const res  = await fetch(`/health/${userId}`);
   const data = await res.json();
   renderTagList('allergyList', data.allergies || [], 'allergy');
   renderTagList('injuryList',  data.injuries  || [], 'injury');
 
   // Подгружаем профиль (никнейм и тэг) в поля редактирования
-  const profRes  = await fetch(`http://localhost:3001/profile/${userId}`);
+  const profRes  = await fetch(`/profile/${userId}`);
   const profData = await profRes.json();
   const nickFld  = document.getElementById('profileNickname');
   const tagFld   = document.getElementById('profileTag');
@@ -1445,7 +1445,7 @@ async function saveProfile() {
   const nickname = (document.getElementById('profileNickname')?.value || '').trim();
   const tag      = (document.getElementById('profileTag')?.value || '').trim();
 
-  const res  = await fetch(`http://localhost:3001/profile/${userId}`, {
+  const res  = await fetch(`/profile/${userId}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ nickname: nickname || undefined, tag: tag || undefined })
@@ -1485,7 +1485,7 @@ async function addAllergy() {
   const input = document.getElementById('allergyInput');
   const name = input.value.trim();
   if (!name) return;
-  await fetch(`http://localhost:3001/health/${userId}/allergy`, {
+  await fetch(`/health/${userId}/allergy`, {
     method: "POST", headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ name })
   });
@@ -1497,7 +1497,7 @@ async function addInjury() {
   const input = document.getElementById('injuryInput');
   const name = input.value.trim();
   if (!name) return;
-  await fetch(`http://localhost:3001/health/${userId}/injury`, {
+  await fetch(`/health/${userId}/injury`, {
     method: "POST", headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ name })
   });
@@ -1506,7 +1506,7 @@ async function addInjury() {
 }
 
 async function removeHealthItem(kind, id) {
-  await fetch(`http://localhost:3001/health/${userId}/${kind}/${id}`, { method: "DELETE" });
+  await fetch(`/health/${userId}/${kind}/${id}`, { method: "DELETE" });
   loadHealth();
 }
 
@@ -1517,7 +1517,7 @@ async function removeHealthItem(kind, id) {
 async function fetchReportRows() {
   const startDate = document.getElementById("startDate")?.value;
   const endDate   = document.getElementById("endDate")?.value;
-  let url = `http://localhost:3001/report/${userId}`;
+  let url = `/report/${userId}`;
   if (startDate && endDate) url += `?startDate=${startDate}&endDate=${endDate}`;
   const res = await fetch(url);
   return await res.json();
@@ -1576,7 +1576,7 @@ function searchStudents() {
     const q = document.getElementById('searchInput').value.trim();
     const container = document.getElementById('searchResults');
     if (!q) { container.innerHTML = ''; return; }
-    const res = await fetch(`http://localhost:3001/students/search?q=${encodeURIComponent(q)}`);
+    const res = await fetch(`/students/search?q=${encodeURIComponent(q)}`);
     const rows = await res.json();
     if (!rows.length) {
       container.innerHTML = `<li class="tag-empty">Ничего не найдено</li>`;
@@ -1596,7 +1596,7 @@ function searchStudents() {
 }
 
 async function addStudentToGroup(studentId) {
-  await fetch(`http://localhost:3001/group/${userId}/add`, {
+  await fetch(`/group/${userId}/add`, {
     method: "POST", headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ studentId })
   });
@@ -1606,13 +1606,13 @@ async function addStudentToGroup(studentId) {
 }
 
 async function removeStudentFromGroup(studentId) {
-  await fetch(`http://localhost:3001/group/${userId}/remove/${studentId}`, { method: "DELETE" });
+  await fetch(`/group/${userId}/remove/${studentId}`, { method: "DELETE" });
   loadCoachGroup();
 }
 
 async function loadCoachGroup() {
   if (!userId) return;
-  const res = await fetch(`http://localhost:3001/group/${userId}`);
+  const res = await fetch(`/group/${userId}`);
   const data = await res.json();
   document.getElementById('groupPercent').textContent = `${data.groupPercent}%`;
   document.getElementById('groupCount').textContent   = data.students.length;
@@ -1703,7 +1703,7 @@ async function initWeightCard() {
   // Заполняем список учеников из группы тренера
   const sel = document.getElementById('weightStudent');
   if (!sel) return;
-  const res = await fetch(`http://localhost:3001/group/${userId}`);
+  const res = await fetch(`/group/${userId}`);
   const data = await res.json();
   sel.innerHTML = '<option value="">— Выберите ученика —</option>' +
     data.students.map(s => `<option value="${s.id}">${s.nickname || s.email}</option>`).join('');
@@ -1719,7 +1719,7 @@ async function loadWeightChart() {
     return;
   }
 
-  const res  = await fetch(`http://localhost:3001/weights/${studentId}`);
+  const res  = await fetch(`/weights/${studentId}`);
   const rows = await res.json();
 
   if (!rows.length) {
@@ -1791,7 +1791,7 @@ async function _fetchWeightRows() {
   const sel = document.getElementById('weightStudent');
   const studentId = sel?.value;
   if (!studentId) { alert('Выберите ученика'); return null; }
-  const res = await fetch(`http://localhost:3001/weights/${studentId}`);
+  const res = await fetch(`/weights/${studentId}`);
   return await res.json();
 }
 
@@ -1827,7 +1827,7 @@ function initAssignCard() {
 async function populateAssignTarget() {
   const sel = document.getElementById('assignTarget');
   if (!sel) return;
-  const res  = await fetch(`http://localhost:3001/group/${userId}`);
+  const res  = await fetch(`/group/${userId}`);
   const data = await res.json();
   sel.innerHTML = '<option value="">— Вся группа —</option>' +
     data.students.map(s => `<option value="${s.id}">${s.nickname || s.email}</option>`).join('');
@@ -1853,7 +1853,7 @@ async function saveAssignment() {
   const startDate = document.getElementById('assignStart')?.value;
   const endDate   = document.getElementById('assignEnd')?.value;
 
-  const res  = await fetch('http://localhost:3001/assignments', {
+  const res  = await fetch('/assignments', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ coachId: userId, studentId: target || null, type, planKey, startDate, endDate })
@@ -1864,7 +1864,7 @@ async function saveAssignment() {
 }
 
 async function loadAssignments() {
-  const res  = await fetch(`http://localhost:3001/assignments?coachId=${userId}`);
+  const res  = await fetch(`/assignments?coachId=${userId}`);
   const rows = await res.json();
   const list = document.getElementById('assignList');
   if (!list) return;
@@ -1897,7 +1897,7 @@ async function loadAssignments() {
 }
 
 async function deleteAssignment(id) {
-  await fetch(`http://localhost:3001/assignments/${id}`, { method: 'DELETE' });
+  await fetch(`/assignments/${id}`, { method: 'DELETE' });
   loadAssignments();
 }
 
@@ -1927,7 +1927,7 @@ function _getWorkoutDate() {
 async function loadWorkoutFromServer() {
   if (!userId) return;
   const date = _getWorkoutDate();
-  const res  = await fetch(`http://localhost:3001/workout/${userId}?date=${date}`);
+  const res  = await fetch(`/workout/${userId}?date=${date}`);
   const rows = await res.json();
 
   workoutLog = {};
@@ -2001,7 +2001,7 @@ async function addSet(muscle, exerciseName, safeId) {
   const note = document.getElementById(`note_${safeId}`)?.value.trim()      || '';
   const date = _getWorkoutDate();
 
-  await fetch(`http://localhost:3001/workout/${userId}`, {
+  await fetch(`/workout/${userId}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ workout_date: date, muscle_group: muscle, exercise: exerciseName, kg, reps, note })
@@ -2018,7 +2018,7 @@ async function addSet(muscle, exerciseName, safeId) {
 }
 
 async function removeSet(setId) {
-  await fetch(`http://localhost:3001/workout/${userId}/${setId}`, { method: 'DELETE' });
+  await fetch(`/workout/${userId}/${setId}`, { method: 'DELETE' });
   await loadWorkoutFromServer();
   renderExerciseList();
 }
@@ -2027,9 +2027,9 @@ async function clearWorkoutLog() {
   if (!confirm('Очистить все подходы за эту дату?')) return;
   // Удаляем через server: загружаем все id и удаляем по одному
   const date = _getWorkoutDate();
-  const res  = await fetch(`http://localhost:3001/workout/${userId}?date=${date}`);
+  const res  = await fetch(`/workout/${userId}?date=${date}`);
   const rows = await res.json();
-  await Promise.all(rows.map(r => fetch(`http://localhost:3001/workout/${userId}/${r.id}`, { method: 'DELETE' })));
+  await Promise.all(rows.map(r => fetch(`/workout/${userId}/${r.id}`, { method: 'DELETE' })));
   workoutLog = {};
   renderExerciseList();
 }
@@ -2049,7 +2049,7 @@ async function logMyWeight() {
   const kg   = parseFloat(document.getElementById('myWeightKg')?.value);
   if (!date || !kg) { alert('Введите дату и вес'); return; }
 
-  const res  = await fetch('http://localhost:3001/my-weight', {
+  const res  = await fetch('/my-weight', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ userId, date, kg })

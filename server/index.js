@@ -302,6 +302,15 @@ function calcEfficiency(userId) {
   };
 }
 
+// ============================================================
+//  KEEP-ALIVE: UptimeRobot пингует /ping каждые 5 мин
+//  → Glitch не засыпает (бесплатный план)
+// ============================================================
+
+app.get('/ping', (_req, res) => {
+  res.json({ ok: true, ts: Date.now(), uptime: Math.round(process.uptime()) });
+});
+
 // Раздаём статику клиента
 app.use(express.static(path.join(__dirname, '../client/public')));
 
