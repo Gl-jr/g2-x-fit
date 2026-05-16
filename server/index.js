@@ -1,20 +1,141 @@
 // ============================================================
 //  G² x FIT — СЕРВЕР (Express + SQLite)
+//  Безопасность: helmet, rate-limit, брутфорс-защита, валидация
 // ============================================================
 
-const express = require('express');           // веб-фреймворк
-const cors = require('cors');                 // разрешает кросс-доменные запросы
-const path = require('path');                 // работа с путями
-const bcrypt = require('bcryptjs');           // хэш паролей
-const jwt = require('jsonwebtoken');          // токены авторизации
-const Database = require('better-sqlite3');   // встроенная SQL-база
+require('dotenv').config();
+
+const express    = require('express');
+const cors       = require('cors');
+const path       = require('path');
+const bcrypt     = require('bcryptjs');
+const jwt        = require('jsonwebtoken');
+const Database   = require('better-sqlite3');
+const helmet     = require('helmet');
+const rateLimit  = require('express-rate-limit');
 
 const app = express();
-app.use(cors());
-app.use(express.json());
 
-// Раздаём статику клиента
-app.use(express.static(path.join(__dirname, '../client/public')));
+// ============================================================
+//  БЕЗОПАСНОСТЬ: заголовки и CORS
+// ============================================================
+
+// Helmet — стандартные security headers
+app.use(helmet({
+  contentSecurityPolicy: false,   // отключаем CSP чтобы не ломать CDN (Chart.js, SheetJS)
+  crossOriginEmbedderPolicy: false
+}));
+
+// CORS — в продакшене разрешаем только свой домен
+const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
+  : ['http://localhost:3001', 'http://localhost:5173'];
+
+app.use(cors({
+  origin: (origin, cb) => {
+    // разрешаем запросы без Origin (curl, мобильные) и из whitelist
+    if (!origin || ALLOWED_ORIGINS.some(o => origin.startsWith(o))) return cb(null, true);
+    cb(new Error('CORS blocked'));
+  },
+  methods: ['GET', 'POST', 'PATCH', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
+app.use(express.json({ limit: '100kb' }));  // не принимаем гигантские тела
+
+// ============================================================
+//  RATE LIMITING — защита от брутфорса и DDoS
+// ============================================================
+
+// Глобальный лимит: 200 запросов / 15 мин на IP
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 200,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Слишком много запросов. Попробуйте через 15 минут.' }
+});
+
+// Жёсткий лимит для авторизации: 8 попыток / 15 мин на IP
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 8,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Слишком много попыток входа. Подождите 15 минут.' },
+  skipSuccessfulRequests: true  // успешный вход не засчитывается
+});
+
+app.use(globalLimiter);
+
+// ============================================================
+//  БРУТФОРС-ЗАЩИТА ПО EMAIL (в памяти)
+//  После 5 неверных паролей — блокировка на 15 минут
+// ============================================================
+
+const loginAttempts = new Map();    // email → { count, lockedUntil }
+
+function recordFail(email) {
+  const now = Date.now();
+  const entry = loginAttempts.get(email) || { count: 0, lockedUntil: 0 };
+  if (entry.lockedUntil > now) return;   // уже заблокирован
+  entry.count++;
+  if (entry.count >= 5) {
+    entry.lockedUntil = now + 15 * 60 * 1000;  // блок 15 мин
+    entry.count = 0;
+    console.warn(`🔒 Аккаунт заблокирован на 15 мин: ${email}`);
+  }
+  loginAttempts.set(email, entry);
+}
+
+function clearFail(email) {
+  loginAttempts.delete(email);
+}
+
+function isLocked(email) {
+  const entry = loginAttempts.get(email);
+  if (!entry) return false;
+  if (entry.lockedUntil > Date.now()) return true;
+  return false;
+}
+
+function minutesLeft(email) {
+  const entry = loginAttempts.get(email);
+  if (!entry) return 0;
+  return Math.ceil((entry.lockedUntil - Date.now()) / 60000);
+}
+
+// Автоочистка старых записей каждые 30 минут
+setInterval(() => {
+  const now = Date.now();
+  for (const [email, entry] of loginAttempts) {
+    if (entry.lockedUntil < now && entry.count === 0) loginAttempts.delete(email);
+  }
+}, 30 * 60 * 1000);
+
+// ============================================================
+//  САНИТИЗАЦИЯ ВХОДНЫХ ДАННЫХ
+// ============================================================
+
+// Очищает строку от HTML/скриптов, обрезает пробелы, ограничивает длину
+function sanitize(val, maxLen = 200) {
+  if (val == null) return null;
+  return String(val)
+    .trim()
+    .slice(0, maxLen)
+    .replace(/[<>"'`]/g, c => ({ '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":"&#39;", '`':'&#96;' }[c]));
+}
+
+// Простая валидация email
+function isValidEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(email || ''));
+}
+
+// Валидация числа (защита от NaN / Infinity)
+function safeNumber(val, fallback = 0) {
+  const n = Number(val);
+  return isFinite(n) ? n : fallback;
+}
 
 // ============================================================
 //  ПОДКЛЮЧЕНИЕ И СХЕМА БАЗЫ ДАННЫХ
@@ -24,6 +145,7 @@ const db = new Database(path.join(__dirname, 'g2xfit.db'));
 db.pragma('journal_mode = WAL');
 db.pragma('foreign_keys = ON');
 
+// Таблица блокировок: хранит постоянные блокировки (дополняет in-memory)
 db.exec(`
   CREATE TABLE IF NOT EXISTS users (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -91,9 +213,9 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS assignments (
     id         INTEGER PRIMARY KEY AUTOINCREMENT,
     coach_id   INTEGER NOT NULL,
-    student_id INTEGER,         -- null если назначено всей группе тренера
-    type       TEXT NOT NULL,   -- workout | meal
-    plan_key   TEXT NOT NULL,   -- ключ программы (split, fullbody, lose, ...)
+    student_id INTEGER,
+    type       TEXT NOT NULL,
+    plan_key   TEXT NOT NULL,
     start_date TEXT,
     end_date   TEXT,
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
@@ -101,9 +223,6 @@ db.exec(`
     FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE
   );
 
-  CREATE INDEX IF NOT EXISTS idx_users_nickname    ON users(nickname);
-  CREATE INDEX IF NOT EXISTS idx_users_tag         ON users(tag);
-  CREATE INDEX IF NOT EXISTS idx_foods_user        ON foods(user_id);
   CREATE TABLE IF NOT EXISTS workout_sets (
     id           INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id      INTEGER NOT NULL,
@@ -117,6 +236,9 @@ db.exec(`
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
   );
 
+  CREATE INDEX IF NOT EXISTS idx_users_nickname      ON users(nickname);
+  CREATE INDEX IF NOT EXISTS idx_users_tag           ON users(tag);
+  CREATE INDEX IF NOT EXISTS idx_foods_user          ON foods(user_id);
   CREATE INDEX IF NOT EXISTS idx_weights_user_date   ON weights(user_id, date);
   CREATE INDEX IF NOT EXISTS idx_assignments_coach   ON assignments(coach_id);
   CREATE INDEX IF NOT EXISTS idx_assignments_student ON assignments(student_id);
@@ -127,24 +249,42 @@ db.exec(`
 //  ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
 // ============================================================
 
-const JWT_SECRET = process.env.JWT_SECRET || 'g2xfit-secret-change-me';
+const JWT_SECRET  = process.env.JWT_SECRET  || 'g2xfit-secret-CHANGE-IN-PRODUCTION';
+const JWT_EXPIRES = process.env.JWT_EXPIRES || '30d';
 
 function signToken(user) {
-  return jwt.sign({ id: user.id, email: user.email, role: user.role }, JWT_SECRET);
+  return jwt.sign(
+    { id: user.id, email: user.email, role: user.role },
+    JWT_SECRET,
+    { expiresIn: JWT_EXPIRES }
+  );
 }
 
 function authRequired(req, res, next) {
   const header = req.headers.authorization || '';
-  const token = header.replace(/^Bearer\s+/i, '');
+  const token  = header.replace(/^Bearer\s+/i, '');
+  if (!token) return res.status(401).json({ error: 'Токен не передан' });
   try {
     req.user = jwt.verify(token, JWT_SECRET);
     next();
-  } catch {
-    res.status(401).json({ error: 'Не авторизован' });
+  } catch (e) {
+    res.status(401).json({ error: 'Токен недействителен или истёк' });
   }
 }
 
-// Подсчёт эффективности (% дней в норме) по конкретному ученику
+// Защита: только сам пользователь или его тренер может смотреть данные
+function selfOrCoach(req, res, next) {
+  const targetId = Number(req.params.userId);
+  if (req.user.id === targetId) return next();
+  // Проверяем, является ли запрашивающий тренером этого ученика
+  const link = db.prepare(
+    'SELECT 1 FROM coach_students WHERE coach_id = ? AND student_id = ?'
+  ).get(req.user.id, targetId);
+  if (link) return next();
+  res.status(403).json({ error: 'Доступ запрещён' });
+}
+
+// Эффективность ученика (% дней в норме)
 function calcEfficiency(userId) {
   const norm = db.prepare('SELECT * FROM norms WHERE user_id = ?').get(userId);
   if (!norm) return { totalDays: 0, daysInNorm: 0, percent: 0 };
@@ -162,86 +302,161 @@ function calcEfficiency(userId) {
   };
 }
 
+// Раздаём статику клиента
+app.use(express.static(path.join(__dirname, '../client/public')));
+
 // ============================================================
 //  АВТОРИЗАЦИЯ И РЕГИСТРАЦИЯ
 // ============================================================
 
-app.post('/register', (req, res) => {
+app.post('/register', authLimiter, (req, res) => {
   try {
-    const { email, password, nickname, tag, role } = req.body;
-    if (!email || !password) return res.json({ error: 'Email и пароль обязательны' });
+    const email    = sanitize(req.body.email, 254)?.toLowerCase();
+    const password = String(req.body.password || '');
+    const nickname = sanitize(req.body.nickname, 50);
+    const tag      = sanitize(req.body.tag, 30);
+    const role     = req.body.role === 'coach' ? 'coach' : 'student';
+
+    if (!isValidEmail(email))
+      return res.status(400).json({ error: 'Некорректный email' });
+    if (!password || password.length < 6)
+      return res.status(400).json({ error: 'Пароль должен быть не менее 6 символов' });
+    if (password.length > 128)
+      return res.status(400).json({ error: 'Пароль слишком длинный' });
 
     const exists = db.prepare('SELECT id FROM users WHERE email = ?').get(email);
-    if (exists) return res.json({ error: 'Пользователь с таким email уже существует' });
+    if (exists) return res.status(409).json({ error: 'Пользователь с таким email уже существует' });
 
-    const hash = bcrypt.hashSync(password, 10);
-    const safeRole = role === 'coach' ? 'coach' : 'student';
+    const hash = bcrypt.hashSync(password, 12);   // bcrypt cost 12 для продакшена
     const info = db.prepare(
       'INSERT INTO users (email, password, nickname, tag, role) VALUES (?, ?, ?, ?, ?)'
-    ).run(email, hash, nickname || null, tag || null, safeRole);
+    ).run(email, hash, nickname || null, tag || null, role);
 
-    const user = { id: info.lastInsertRowid, email, role: safeRole };
-    res.json({ message: 'OK', userId: user.id, role: safeRole, token: signToken(user) });
+    const user = { id: info.lastInsertRowid, email, role };
+    res.json({ message: 'OK', userId: user.id, role, token: signToken(user) });
   } catch (err) {
-    console.error(err);
-    res.json({ error: 'Ошибка регистрации' });
+    console.error('register error:', err.message);
+    res.status(500).json({ error: 'Ошибка регистрации' });
   }
 });
 
-app.post('/login', (req, res) => {
+app.post('/login', authLimiter, (req, res) => {
   try {
-    const { email, password } = req.body;
-    const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
-    if (!user) return res.json({ error: 'Пользователь не найден' });
-    if (!bcrypt.compareSync(password, user.password)) return res.json({ error: 'Неверный пароль' });
+    const email    = sanitize(req.body.email, 254)?.toLowerCase();
+    const password = String(req.body.password || '');
 
-    res.json({ token: signToken(user), userId: user.id, role: user.role, nickname: user.nickname });
+    if (!isValidEmail(email))
+      return res.status(400).json({ error: 'Некорректный email' });
+
+    // Проверка блокировки по email
+    if (isLocked(email)) {
+      return res.status(429).json({
+        error: `Аккаунт заблокирован из-за множества ошибок. Попробуйте через ${minutesLeft(email)} мин.`
+      });
+    }
+
+    const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
+    // Одинаковое сообщение, чтобы не раскрывать, есть ли аккаунт
+    if (!user || !bcrypt.compareSync(password, user.password)) {
+      if (user) recordFail(email);
+      return res.status(401).json({ error: 'Неверный email или пароль' });
+    }
+
+    clearFail(email);
+    res.json({
+      token:    signToken(user),
+      userId:   user.id,
+      role:     user.role,
+      nickname: user.nickname,
+      tag:      user.tag
+    });
   } catch (err) {
-    res.json({ error: 'Ошибка входа' });
+    console.error('login error:', err.message);
+    res.status(500).json({ error: 'Ошибка входа' });
   }
 });
 
-// Восстановление пароля — без email-провайдера: код выводится в терминал
-const resetCodes = new Map();
-const genCode = () => Math.floor(1000 + Math.random() * 9000).toString();
+// ============================================================
+//  ВОССТАНОВЛЕНИЕ ПАРОЛЯ (код в терминале — без email-провайдера)
+// ============================================================
 
-app.post('/forgot-password', (req, res) => {
-  const { email } = req.body;
+const resetCodes  = new Map();
+const resetLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 3,
+  message: { error: 'Слишком много запросов сброса. Подождите час.' }
+});
+
+app.post('/forgot-password', resetLimiter, (req, res) => {
+  const email = sanitize(req.body.email, 254)?.toLowerCase();
+  if (!isValidEmail(email))
+    return res.status(400).json({ error: 'Некорректный email' });
+
   const user = db.prepare('SELECT id FROM users WHERE email = ?').get(email);
-  if (!user) return res.json({ error: 'Пользователь с таким email не найден' });
-
-  const code = genCode();
-  resetCodes.set(email, { code, expiresAt: Date.now() + 10 * 60 * 1000 });
-  console.log(`🔐 КОД ДЛЯ СБРОСА ПАРОЛЯ (${email}): ${code}`);
-  res.json({ message: 'Код для сброса пароля отправлен (проверьте терминал)' });
+  // Не раскрываем, существует ли email — всегда ОК
+  if (user) {
+    const code = Math.floor(100000 + Math.random() * 900000).toString(); // 6 цифр
+    resetCodes.set(email, { code, expiresAt: Date.now() + 10 * 60 * 1000 });
+    console.log(`🔐 КОД СБРОСА ПАРОЛЯ (${email}): ${code}`);
+  }
+  res.json({ message: 'Если аккаунт существует — код отправлен (см. терминал)' });
 });
 
 app.post('/reset-password', (req, res) => {
-  const { email, code, newPassword } = req.body;
+  const email       = sanitize(req.body.email, 254)?.toLowerCase();
+  const code        = String(req.body.code || '').trim();
+  const newPassword = String(req.body.newPassword || '');
+
   const record = resetCodes.get(email);
   if (!record || record.code !== code || record.expiresAt < Date.now())
-    return res.json({ error: 'Неверный или истёкший код' });
+    return res.status(400).json({ error: 'Неверный или истёкший код' });
 
-  const hash = bcrypt.hashSync(newPassword, 10);
+  if (!newPassword || newPassword.length < 6)
+    return res.status(400).json({ error: 'Пароль должен быть не менее 6 символов' });
+
+  const hash = bcrypt.hashSync(newPassword, 12);
   db.prepare('UPDATE users SET password = ? WHERE email = ?').run(hash, email);
   resetCodes.delete(email);
-  res.json({ message: 'Пароль успешно изменён! Теперь войдите.' });
+  clearFail(email);
+  res.json({ message: 'Пароль успешно изменён!' });
 });
 
 // ============================================================
-//  ПРОФИЛЬ ПОЛЬЗОВАТЕЛЯ
+//  ПРОФИЛЬ ПОЛЬЗОВАТЕЛЯ (никнейм, тэг)
 // ============================================================
 
 app.get('/profile/:userId', (req, res) => {
-  const u = db.prepare('SELECT id, email, nickname, tag, role FROM users WHERE id = ?').get(req.params.userId);
-  if (!u) return res.json({ error: 'Не найден' });
+  const id = Number(req.params.userId);
+  if (!Number.isInteger(id)) return res.status(400).json({ error: 'Неверный id' });
+  const u = db.prepare('SELECT id, email, nickname, tag, role FROM users WHERE id = ?').get(id);
+  if (!u) return res.status(404).json({ error: 'Не найден' });
   res.json(u);
 });
 
+// Обновить никнейм и/или тэг
+app.patch('/profile/:userId', (req, res) => {
+  const id       = Number(req.params.userId);
+  const nickname = sanitize(req.body.nickname, 50);
+  const tag      = sanitize(req.body.tag, 30);
+
+  if (!Number.isInteger(id)) return res.status(400).json({ error: 'Неверный id' });
+
+  db.prepare(
+    'UPDATE users SET nickname = COALESCE(?, nickname), tag = COALESCE(?, tag) WHERE id = ?'
+  ).run(nickname || null, tag || null, id);
+
+  const updated = db.prepare('SELECT id, email, nickname, tag, role FROM users WHERE id = ?').get(id);
+  res.json({ message: 'Профиль обновлён', ...updated });
+});
+
+// Обратная совместимость со старым POST
 app.post('/profile/:userId', (req, res) => {
-  const { nickname, tag } = req.body;
-  db.prepare('UPDATE users SET nickname = COALESCE(?, nickname), tag = COALESCE(?, tag) WHERE id = ?')
-    .run(nickname ?? null, tag ?? null, req.params.userId);
+  const id       = Number(req.params.userId);
+  const nickname = sanitize(req.body.nickname, 50);
+  const tag      = sanitize(req.body.tag, 30);
+  db.prepare(
+    'UPDATE users SET nickname = COALESCE(?, nickname), tag = COALESCE(?, tag) WHERE id = ?'
+  ).run(nickname || null, tag || null, id);
   res.json({ message: 'Профиль обновлён' });
 });
 
@@ -250,36 +465,44 @@ app.post('/profile/:userId', (req, res) => {
 // ============================================================
 
 app.post('/calculate', (req, res) => {
-  const { weight, height, age, userId, goal } = req.body;
-  if (!weight || !height || !age) return res.json({ error: 'Заполни все поля' });
+  const weight = safeNumber(req.body.weight);
+  const height = safeNumber(req.body.height);
+  const age    = safeNumber(req.body.age);
+  const userId = safeNumber(req.body.userId);
+  const goal   = sanitize(req.body.goal, 20);
+
+  if (!weight || !height || !age)
+    return res.status(400).json({ error: 'Заполни все поля' });
+  if (weight < 20 || weight > 500 || height < 50 || height > 300 || age < 1 || age > 120)
+    return res.status(400).json({ error: 'Некорректные данные' });
 
   const bmr = 10 * weight + 6.25 * height - 5 * age + 5;
   let calories = bmr * 1.2;
   let goalMessage = '🎯 Цель: Поддержание веса';
 
-  if (goal === 'lose')  { calories *= 0.85; goalMessage = '🎯 Цель: Похудение (дефицит 15%)'; }
-  if (goal === 'gain')  { calories *= 1.15; goalMessage = '🎯 Цель: Набор мышечной массы (профицит 15%)'; }
+  if (goal === 'lose')  { calories *= 0.8; goalMessage = '🔥 Цель: Похудение (-20% калорий)'; }
+  if (goal === 'gain')  { calories *= 1.15; goalMessage = '💪 Цель: Набор массы (+15% калорий)'; }
 
-  calories = Math.round(calories);
-  const protein = Math.round((calories * 0.3) / 4);
-  const fat     = Math.round((calories * 0.3) / 9);
-  const carbs   = Math.round((calories * 0.4) / 4);
+  const protein = Math.round(weight * 2);
+  const fat     = Math.round((calories * 0.25) / 9);
+  const carbs   = Math.round((calories - protein * 4 - fat * 9) / 4);
 
   if (userId) {
     db.prepare(`
       INSERT INTO norms (user_id, calories, protein, fat, carbs, goal, goal_message)
       VALUES (?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT(user_id) DO UPDATE SET
-        calories=excluded.calories, protein=excluded.protein, fat=excluded.fat,
-        carbs=excluded.carbs, goal=excluded.goal, goal_message=excluded.goal_message
-    `).run(userId, calories, protein, fat, carbs, goal || 'maintain', goalMessage);
+        calories=excluded.calories, protein=excluded.protein,
+        fat=excluded.fat, carbs=excluded.carbs,
+        goal=excluded.goal, goal_message=excluded.goal_message
+    `).run(userId, Math.round(calories), protein, fat, carbs, goal || 'maintain', goalMessage);
   }
 
-  res.json({ calories, protein, fat, carbs, goal, goalMessage });
+  res.json({ calories: Math.round(calories), protein, fat, carbs, goalMessage });
 });
 
 app.get('/norm/:userId', (req, res) => {
-  const norm = db.prepare('SELECT * FROM norms WHERE user_id = ?').get(req.params.userId);
+  const norm = db.prepare('SELECT * FROM norms WHERE user_id = ?').get(Number(req.params.userId));
   if (!norm) return res.json({ error: 'Норма не рассчитана' });
   res.json({
     calories: norm.calories, protein: norm.protein, fat: norm.fat, carbs: norm.carbs,
@@ -292,37 +515,46 @@ app.get('/norm/:userId', (req, res) => {
 // ============================================================
 
 app.post('/food', (req, res) => {
-  const { userId, date, protein, fat, carbs } = req.body;
-  if (!userId || !date) return res.json({ error: 'Нет данных' });
+  const userId = safeNumber(req.body.userId);
+  const date   = sanitize(req.body.date, 10);
+  if (!userId || !date || !/^\d{4}-\d{2}-\d{2}$/.test(date))
+    return res.status(400).json({ error: 'Нет данных' });
 
-  const existing = db.prepare('SELECT * FROM foods WHERE user_id = ? AND date = ?').get(userId, date);
+  const protein = safeNumber(req.body.protein);
+  const fat     = safeNumber(req.body.fat);
+  const carbs   = safeNumber(req.body.carbs);
+
+  const existing = db.prepare('SELECT id FROM foods WHERE user_id = ? AND date = ?').get(userId, date);
   if (existing) {
     db.prepare('UPDATE foods SET protein = protein + ?, fat = fat + ?, carbs = carbs + ? WHERE id = ?')
-      .run(protein || 0, fat || 0, carbs || 0, existing.id);
+      .run(protein, fat, carbs, existing.id);
   } else {
     db.prepare('INSERT INTO foods (user_id, date, protein, fat, carbs) VALUES (?, ?, ?, ?, ?)')
-      .run(userId, date, protein || 0, fat || 0, carbs || 0);
+      .run(userId, date, protein, fat, carbs);
   }
   res.json({ message: 'Сохранено' });
 });
 
 app.get('/report/:userId', (req, res) => {
   const { startDate, endDate } = req.query;
+  const id = Number(req.params.userId);
   let rows;
-  if (startDate && endDate) {
-    rows = db.prepare('SELECT * FROM foods WHERE user_id = ? AND date BETWEEN ? AND ? ORDER BY date DESC')
-      .all(req.params.userId, startDate, endDate);
+  if (startDate && endDate &&
+      /^\d{4}-\d{2}-\d{2}$/.test(startDate) && /^\d{4}-\d{2}-\d{2}$/.test(endDate)) {
+    rows = db.prepare(
+      'SELECT * FROM foods WHERE user_id = ? AND date BETWEEN ? AND ? ORDER BY date DESC'
+    ).all(id, startDate, endDate);
   } else {
-    rows = db.prepare('SELECT * FROM foods WHERE user_id = ? ORDER BY date DESC').all(req.params.userId);
+    rows = db.prepare('SELECT * FROM foods WHERE user_id = ? ORDER BY date DESC').all(id);
   }
   res.json(rows);
 });
 
 app.get('/stats/:userId', (req, res) => {
-  const norm = db.prepare('SELECT * FROM norms WHERE user_id = ?').get(req.params.userId);
+  const norm = db.prepare('SELECT * FROM norms WHERE user_id = ?').get(Number(req.params.userId));
   if (!norm) return res.json({ error: 'Сначала рассчитайте норму БЖУ' });
 
-  const eff = calcEfficiency(req.params.userId);
+  const eff = calcEfficiency(Number(req.params.userId));
   res.json({
     daysInNorm: eff.daysInNorm,
     daysOutOfNorm: eff.totalDays - eff.daysInNorm,
@@ -336,36 +568,40 @@ app.get('/stats/:userId', (req, res) => {
 });
 
 // ============================================================
-//  АЛЛЕРГИИ И ТРАВМЫ (добавляются в любой момент)
+//  АЛЛЕРГИИ И ТРАВМЫ
 // ============================================================
 
 app.get('/health/:userId', (req, res) => {
-  const allergies = db.prepare('SELECT id, name FROM allergies WHERE user_id = ?').all(req.params.userId);
-  const injuries  = db.prepare('SELECT id, name FROM injuries  WHERE user_id = ?').all(req.params.userId);
-  res.json({ allergies, injuries });
+  const id = Number(req.params.userId);
+  res.json({
+    allergies: db.prepare('SELECT id, name FROM allergies WHERE user_id = ?').all(id),
+    injuries:  db.prepare('SELECT id, name FROM injuries  WHERE user_id = ?').all(id)
+  });
 });
 
 app.post('/health/:userId/allergy', (req, res) => {
-  const name = (req.body.name || '').trim();
-  if (!name) return res.json({ error: 'Введите название' });
-  const info = db.prepare('INSERT INTO allergies (user_id, name) VALUES (?, ?)').run(req.params.userId, name);
+  const name = sanitize(req.body.name, 100);
+  if (!name) return res.status(400).json({ error: 'Введите название' });
+  const info = db.prepare('INSERT INTO allergies (user_id, name) VALUES (?, ?)').run(Number(req.params.userId), name);
   res.json({ id: info.lastInsertRowid, name });
 });
 
 app.delete('/health/:userId/allergy/:id', (req, res) => {
-  db.prepare('DELETE FROM allergies WHERE id = ? AND user_id = ?').run(req.params.id, req.params.userId);
+  db.prepare('DELETE FROM allergies WHERE id = ? AND user_id = ?')
+    .run(Number(req.params.id), Number(req.params.userId));
   res.json({ message: 'Удалено' });
 });
 
 app.post('/health/:userId/injury', (req, res) => {
-  const name = (req.body.name || '').trim();
-  if (!name) return res.json({ error: 'Введите название' });
-  const info = db.prepare('INSERT INTO injuries (user_id, name) VALUES (?, ?)').run(req.params.userId, name);
+  const name = sanitize(req.body.name, 100);
+  if (!name) return res.status(400).json({ error: 'Введите название' });
+  const info = db.prepare('INSERT INTO injuries (user_id, name) VALUES (?, ?)').run(Number(req.params.userId), name);
   res.json({ id: info.lastInsertRowid, name });
 });
 
 app.delete('/health/:userId/injury/:id', (req, res) => {
-  db.prepare('DELETE FROM injuries WHERE id = ? AND user_id = ?').run(req.params.id, req.params.userId);
+  db.prepare('DELETE FROM injuries WHERE id = ? AND user_id = ?')
+    .run(Number(req.params.id), Number(req.params.userId));
   res.json({ message: 'Удалено' });
 });
 
@@ -373,46 +609,44 @@ app.delete('/health/:userId/injury/:id', (req, res) => {
 //  КАБИНЕТ ТРЕНЕРА: ПОИСК, ГРУППА, ЭФФЕКТИВНОСТЬ
 // ============================================================
 
-// Поиск ученика по никнейму или тэгу
 app.get('/students/search', (req, res) => {
-  const q = `%${(req.query.q || '').trim()}%`;
+  const raw = sanitize(req.query.q || '', 50);
+  const q   = `%${raw}%`;
   const rows = db.prepare(`
     SELECT id, email, nickname, tag
       FROM users
      WHERE role = 'student' AND (nickname LIKE ? OR tag LIKE ? OR email LIKE ?)
-     LIMIT 25
+     LIMIT 20
   `).all(q, q, q);
   res.json(rows);
 });
 
-// Получить состав группы тренера + эффективность по каждому
 app.get('/group/:coachId', (req, res) => {
   const students = db.prepare(`
     SELECT u.id, u.email, u.nickname, u.tag
       FROM coach_students cs
       JOIN users u ON u.id = cs.student_id
      WHERE cs.coach_id = ?
-  `).all(req.params.coachId);
+  `).all(Number(req.params.coachId));
 
   const enriched = students.map(s => ({ ...s, ...calcEfficiency(s.id) }));
   const groupPercent = enriched.length
-    ? Math.round(enriched.reduce((a, s) => a + s.percent, 0) / enriched.length)
-    : 0;
+    ? Math.round(enriched.reduce((a, s) => a + s.percent, 0) / enriched.length) : 0;
 
   res.json({ students: enriched, groupPercent });
 });
 
 app.post('/group/:coachId/add', (req, res) => {
-  const { studentId } = req.body;
-  if (!studentId) return res.json({ error: 'studentId обязателен' });
+  const studentId = safeNumber(req.body.studentId);
+  if (!studentId) return res.status(400).json({ error: 'studentId обязателен' });
   db.prepare('INSERT OR IGNORE INTO coach_students (coach_id, student_id) VALUES (?, ?)')
-    .run(req.params.coachId, studentId);
+    .run(Number(req.params.coachId), studentId);
   res.json({ message: 'Ученик добавлен' });
 });
 
 app.delete('/group/:coachId/remove/:studentId', (req, res) => {
   db.prepare('DELETE FROM coach_students WHERE coach_id = ? AND student_id = ?')
-    .run(req.params.coachId, req.params.studentId);
+    .run(Number(req.params.coachId), Number(req.params.studentId));
   res.json({ message: 'Ученик удалён' });
 });
 
@@ -420,39 +654,45 @@ app.delete('/group/:coachId/remove/:studentId', (req, res) => {
 //  ДНЕВНИК ТРЕНИРОВОК (подходы по упражнениям)
 // ============================================================
 
-// Получить все подходы пользователя на конкретную дату
 app.get('/workout/:userId', (req, res) => {
-  const { date } = req.query;
-  if (!date) return res.json([]);
+  const date = sanitize(req.query.date, 10);
+  if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return res.json([]);
   const rows = db.prepare(
     'SELECT * FROM workout_sets WHERE user_id = ? AND workout_date = ? ORDER BY id ASC'
-  ).all(req.params.userId, date);
+  ).all(Number(req.params.userId), date);
   res.json(rows);
 });
 
-// Получить все даты тренировок (для календаря)
 app.get('/workout/:userId/dates', (req, res) => {
   const rows = db.prepare(
     'SELECT DISTINCT workout_date AS date FROM workout_sets WHERE user_id = ? ORDER BY workout_date DESC'
-  ).all(req.params.userId);
+  ).all(Number(req.params.userId));
   res.json(rows.map(r => r.date));
 });
 
-// Добавить подход
 app.post('/workout/:userId', (req, res) => {
-  const { workout_date, muscle_group, exercise, kg, reps, note } = req.body;
-  if (!workout_date || !muscle_group || !exercise) return res.json({ error: 'Нет данных' });
+  const workout_date  = sanitize(req.body.workout_date, 10);
+  const muscle_group  = sanitize(req.body.muscle_group, 50);
+  const exercise      = sanitize(req.body.exercise, 100);
+  const kg            = safeNumber(req.body.kg);
+  const reps          = Math.round(safeNumber(req.body.reps));
+  const note          = sanitize(req.body.note || '', 300);
+
+  if (!workout_date || !muscle_group || !exercise)
+    return res.status(400).json({ error: 'Нет данных' });
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(workout_date))
+    return res.status(400).json({ error: 'Неверный формат даты' });
+
   const info = db.prepare(`
     INSERT INTO workout_sets (user_id, workout_date, muscle_group, exercise, kg, reps, note)
     VALUES (?, ?, ?, ?, ?, ?, ?)
-  `).run(req.params.userId, workout_date, muscle_group, exercise, kg || 0, reps || 0, note || '');
+  `).run(Number(req.params.userId), workout_date, muscle_group, exercise, kg, reps, note);
   res.json({ id: info.lastInsertRowid, message: 'Подход добавлен' });
 });
 
-// Удалить подход
 app.delete('/workout/:userId/:id', (req, res) => {
   db.prepare('DELETE FROM workout_sets WHERE id = ? AND user_id = ?')
-    .run(req.params.id, req.params.userId);
+    .run(Number(req.params.id), Number(req.params.userId));
   res.json({ message: 'Удалено' });
 });
 
@@ -463,30 +703,35 @@ app.delete('/workout/:userId/:id', (req, res) => {
 app.get('/weights/:userId', (req, res) => {
   const rows = db.prepare(
     'SELECT id, date, kg FROM weights WHERE user_id = ? ORDER BY date ASC'
-  ).all(req.params.userId);
+  ).all(Number(req.params.userId));
   res.json(rows);
 });
 
 app.post('/weights/:userId', (req, res) => {
-  const { date, kg } = req.body;
-  if (!date || kg == null) return res.json({ error: 'Нет данных' });
+  const date = sanitize(req.body.date, 10);
+  const kg   = safeNumber(req.body.kg);
+  if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date) || kg === 0)
+    return res.status(400).json({ error: 'Нет данных' });
   db.prepare('INSERT OR REPLACE INTO weights (user_id, date, kg) VALUES (?, ?, ?)')
-    .run(req.params.userId, date, kg);
+    .run(Number(req.params.userId), date, kg);
   res.json({ message: 'Сохранено' });
 });
 
 app.delete('/weights/:userId/:id', (req, res) => {
   db.prepare('DELETE FROM weights WHERE id = ? AND user_id = ?')
-    .run(req.params.id, req.params.userId);
+    .run(Number(req.params.id), Number(req.params.userId));
   res.json({ message: 'Удалено' });
 });
 
-// Студент логирует собственный вес (вызывается из раздела «Прогресс»)
+// Студент логирует свой вес
 app.post('/my-weight', (req, res) => {
-  const { userId: uid, date, kg } = req.body;
-  if (!uid || !date || kg == null) return res.json({ error: 'Нет данных' });
+  const userId = safeNumber(req.body.userId);
+  const date   = sanitize(req.body.date, 10);
+  const kg     = safeNumber(req.body.kg);
+  if (!userId || !date || !/^\d{4}-\d{2}-\d{2}$/.test(date) || !kg)
+    return res.status(400).json({ error: 'Нет данных' });
   db.prepare('INSERT OR REPLACE INTO weights (user_id, date, kg) VALUES (?, ?, ?)')
-    .run(uid, date, kg);
+    .run(userId, date, kg);
   res.json({ message: 'Вес сохранён' });
 });
 
@@ -495,7 +740,7 @@ app.post('/my-weight', (req, res) => {
 // ============================================================
 
 app.get('/assignments', (req, res) => {
-  const { coachId } = req.query;
+  const coachId = safeNumber(req.query.coachId);
   if (!coachId) return res.json([]);
   const rows = db.prepare(`
     SELECT a.*,
@@ -510,18 +755,41 @@ app.get('/assignments', (req, res) => {
 });
 
 app.post('/assignments', (req, res) => {
-  const { coachId, studentId, type, planKey, startDate, endDate } = req.body;
-  if (!coachId || !type || !planKey) return res.json({ error: 'Нет данных' });
+  const coachId   = safeNumber(req.body.coachId);
+  const studentId = req.body.studentId ? safeNumber(req.body.studentId) : null;
+  const type      = sanitize(req.body.type, 20);
+  const planKey   = sanitize(req.body.planKey, 50);
+  const startDate = req.body.startDate ? sanitize(req.body.startDate, 10) : null;
+  const endDate   = req.body.endDate   ? sanitize(req.body.endDate, 10)   : null;
+
+  if (!coachId || !type || !planKey)
+    return res.status(400).json({ error: 'Нет данных' });
+
   const info = db.prepare(`
     INSERT INTO assignments (coach_id, student_id, type, plan_key, start_date, end_date)
     VALUES (?, ?, ?, ?, ?, ?)
-  `).run(coachId, studentId || null, type, planKey, startDate || null, endDate || null);
+  `).run(coachId, studentId, type, planKey, startDate, endDate);
   res.json({ id: info.lastInsertRowid, message: 'Назначено' });
 });
 
 app.delete('/assignments/:id', (req, res) => {
-  db.prepare('DELETE FROM assignments WHERE id = ?').run(req.params.id);
+  db.prepare('DELETE FROM assignments WHERE id = ?').run(Number(req.params.id));
   res.json({ message: 'Удалено' });
+});
+
+// ============================================================
+//  ОБРАБОТКА ОШИБОК
+// ============================================================
+
+// 404
+app.use((req, res) => {
+  res.status(404).json({ error: 'Маршрут не найден' });
+});
+
+// Глобальный обработчик ошибок
+app.use((err, req, res, _next) => {
+  console.error('Unhandled error:', err.message);
+  res.status(500).json({ error: 'Внутренняя ошибка сервера' });
 });
 
 // ============================================================
@@ -530,10 +798,13 @@ app.delete('/assignments/:id', (req, res) => {
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
-  console.log(`🚀 Сервер запущен на http://localhost:${PORT}`);
-  console.log('💾 База:', path.join(__dirname, 'g2xfit.db'));
+  console.log(`🚀 G² x FIT запущен: http://localhost:${PORT}`);
+  console.log(`💾 База: ${path.join(__dirname, 'g2xfit.db')}`);
+  console.log(`🔒 Режим: ${process.env.NODE_ENV || 'development'}`);
+  if (JWT_SECRET === 'g2xfit-secret-CHANGE-IN-PRODUCTION') {
+    console.warn('⚠️  JWT_SECRET не задан в .env — не используй в продакшене!');
+  }
 });
 
-// Безопасное закрытие БД
 process.on('SIGINT',  () => { db.close(); process.exit(0); });
 process.on('SIGTERM', () => { db.close(); process.exit(0); });

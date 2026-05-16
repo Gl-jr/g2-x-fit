@@ -1379,6 +1379,7 @@ async function loginFromModal() {
     localStorage.setItem("userId", userId);
     localStorage.setItem("role",   data.role || "student");
     if (data.nickname) localStorage.setItem("nickname", data.nickname);
+    if (data.tag)      localStorage.setItem("tag",      data.tag);
 
     closeAuthModal();
     showApp();
@@ -1420,10 +1421,49 @@ async function forgotPassword() {
 
 async function loadHealth() {
   if (!userId) return;
-  const res = await fetch(`http://localhost:3001/health/${userId}`);
+
+  // Загружаем аллергии / травмы
+  const res  = await fetch(`http://localhost:3001/health/${userId}`);
   const data = await res.json();
   renderTagList('allergyList', data.allergies || [], 'allergy');
   renderTagList('injuryList',  data.injuries  || [], 'injury');
+
+  // Подгружаем профиль (никнейм и тэг) в поля редактирования
+  const profRes  = await fetch(`http://localhost:3001/profile/${userId}`);
+  const profData = await profRes.json();
+  const nickFld  = document.getElementById('profileNickname');
+  const tagFld   = document.getElementById('profileTag');
+  if (nickFld) nickFld.value = profData.nickname || '';
+  if (tagFld)  tagFld.value  = profData.tag      || '';
+}
+
+// ============================================================
+//  СОХРАНИТЬ ПРОФИЛЬ (никнейм / тэг)
+// ============================================================
+
+async function saveProfile() {
+  const nickname = (document.getElementById('profileNickname')?.value || '').trim();
+  const tag      = (document.getElementById('profileTag')?.value || '').trim();
+
+  const res  = await fetch(`http://localhost:3001/profile/${userId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ nickname: nickname || undefined, tag: tag || undefined })
+  });
+  const data = await res.json();
+  if (data.error) { alert(data.error); return; }
+
+  // Обновляем localStorage и заголовок
+  if (nickname) {
+    localStorage.setItem('nickname', nickname);
+    const gr = document.getElementById('greeting');
+    const titleEl = document.getElementById('pageTitle');
+    if (gr) gr.textContent = SECTION_TITLES[document.querySelector('.nav-item.active')?.dataset?.section] || 'Главная';
+  }
+  if (tag) localStorage.setItem('tag', tag);
+
+  const msg = document.getElementById('profileSaveMsg');
+  if (msg) { msg.style.display = 'block'; setTimeout(() => msg.style.display = 'none', 2500); }
 }
 
 function renderTagList(containerId, items, kind) {

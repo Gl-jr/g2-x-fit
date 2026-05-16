@@ -106,10 +106,13 @@ body {
 /* ——————————————————————————————————————————————————————————
    Все карточки: flex-колонка, полная ширина, без фиксированной высоты.
    Карточки показываются по одной (showSection скрывает остальные).
+   gap: 12px — единый отступ между всеми дочерними элементами карточки
+   (input-group, select-wrapper, btn-action и т.д.)
    —————————————————————————————————————————————————————————— */
 .card {
     display: flex;
     flex-direction: column;
+    gap: 12px;
     width: 100%;
 }
 
@@ -253,9 +256,9 @@ body {
     display: flex;
     align-items: center;
     gap: var(--spacing-sm);
-    margin-bottom: var(--spacing-md);
     padding-bottom: var(--spacing-sm);
     border-bottom: 1px solid var(--glass-border);
+    /* margin-bottom убран — gap на родителе (.card) уже даёт отступ */
 }
 
 .card-icon {
@@ -1471,6 +1474,9 @@ progress::-webkit-progress-bar {
    ============================================================ */
 
 .auth-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;                        /* отступ между полями ввода */
     margin-bottom: var(--spacing-md);
     padding-top: var(--spacing-sm);
 }
@@ -1485,12 +1491,12 @@ progress::-webkit-progress-bar {
     letter-spacing: 0.6px;
     text-transform: uppercase;
     color: var(--text-secondary);
-    margin-bottom: var(--spacing-sm);
+    margin-bottom: 0;                 /* gap у родителя уже даёт отступ */
 }
 .auth-buttons {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: var(--spacing-md);
+    gap: var(--spacing-md);          /* 24px между Войти и Зарегистрироваться */
     margin-top: var(--spacing-lg);
 }
 .auth-buttons > button {
